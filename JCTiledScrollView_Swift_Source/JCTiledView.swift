@@ -78,7 +78,7 @@ class JCTiledView: UIView
     override func drawRect(rect: CGRect)
     {
         let ctx = UIGraphicsGetCurrentContext()
-        let scale = CGContextGetCTM(ctx).a / self.tiledLayer().contentsScale
+        let scale = CGContextGetCTM(ctx!).a / self.tiledLayer().contentsScale
 
         let col = Int(rect.minX * scale / self.tileSize.width)
         let row = Int(rect.minY * scale / self.tileSize.height)

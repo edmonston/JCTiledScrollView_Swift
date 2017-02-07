@@ -25,7 +25,7 @@ class JCPDFTiledView: JCTiledView
         let ctx = UIGraphicsGetCurrentContext()
 
         UIColor.whiteColor().setFill()
-        CGContextFillRect(ctx, CGContextGetClipBoundingBox(ctx))
+        CGContextFillRect(ctx!, CGContextGetClipBoundingBox(ctx!))
 
         var pageNumber = Int(0)
         var pageSize = CGSizeZero
@@ -39,12 +39,12 @@ class JCPDFTiledView: JCTiledView
                                                                  pageSize: &pageSize) else {
             return
         }
-        CGContextTranslateCTM(ctx, 0.0, CGFloat(pageNumber) * pageSize.height)
+        CGContextTranslateCTM(ctx!, 0.0, CGFloat(pageNumber) * pageSize.height)
 
-        CGContextScaleCTM(ctx, 1.0, -1.0)
-        CGContextSetRenderingIntent(ctx, CGColorRenderingIntent.RenderingIntentDefault)
-        CGContextSetInterpolationQuality(ctx, CGInterpolationQuality.Default)
+        CGContextScaleCTM(ctx!, 1.0, -1.0)
+        CGContextSetRenderingIntent(ctx!, CGColorRenderingIntent.RenderingIntentDefault)
+        CGContextSetInterpolationQuality(ctx!, CGInterpolationQuality.Default)
 
-        CGContextDrawPDFPage(ctx, page)
+        CGContextDrawPDFPage(ctx!, page)
     }
 }
