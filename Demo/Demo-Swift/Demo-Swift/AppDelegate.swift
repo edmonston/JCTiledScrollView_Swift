@@ -30,7 +30,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate
         vc2.tabBarItem = UITabBarItem(title: "Image", image: DemoStyleKit.imageOfString("img"), selectedImage: nil)
 
         tc.viewControllers = [vc1, vc2]
-        tc.tabBar.isTranslucent = false
+        tc.tabBar.isTranslucent = true
         window?.rootViewController = tc
 
         return true

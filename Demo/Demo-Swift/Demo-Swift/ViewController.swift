@@ -74,11 +74,24 @@ let ButtonTitleRemoveAnnotation = "Remove this Annotation"
 
     }
     
+    var lastScrollViewSize = CGSize.zero
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
+        scrollView.layoutIfNeeded()
+        if lastScrollViewSize != scrollView.bounds.size {
+            defer { lastScrollViewSize = scrollView.bounds.size }
+            let horizScale = min(1.0, scrollView.scrollView.contentSize.width / scrollView.bounds.width)
+            let vertScale = min(1.0, scrollView.scrollView.contentSize.height / scrollView.bounds.height)
+            let minScale = min(horizScale, vertScale)
+            if minScale < 1.0 {
+                scrollView.scrollView.minimumZoomScale = 1 / minScale
+                scrollView.setZoomScale(1 / minScale, animated: false)
+            }
+        }
+        
         guard !annotationsAdded else { return }
         defer { annotationsAdded = true }
-        scrollView.tiledView.layoutIfNeeded()
+     //   scrollView.tiledView.layoutIfNeeded()
         addRandomAnnotations()
         scrollView.refreshAnnotations()
     }
@@ -131,7 +144,7 @@ let ButtonTitleRemoveAnnotation = "Remove this Annotation"
 
         selectedAnnotation = annotation
         annotation.isSelected = true
-        annotationView.updateForAnnotation(annotation)
+        annotationView.annotation = annotation
     }
 
     func tiledScrollView(_ scrollView: JCTiledScrollView, didDeselectAnnotationView view: JCAnnotationView) {
@@ -141,15 +154,15 @@ let ButtonTitleRemoveAnnotation = "Remove this Annotation"
         }
         selectedAnnotation = nil
         annotation.isSelected = false
-        annotationView.updateForAnnotation(annotation)
+        annotationView.annotation = annotation
     }
 
     func tiledScrollView(_ scrollView: JCTiledScrollView!, viewForAnnotation annotation: JCAnnotation) -> JCAnnotationView? {
         var annotationView: DemoAnnotationView!
         annotationView =
         (scrollView.dequeueReusableAnnotationViewWithReuseIdentifier(demoAnnotationViewReuseID) as? DemoAnnotationView) ??
-        DemoAnnotationView(frame: CGRect.zero, annotation: annotation, reuseIdentifier: demoAnnotationViewReuseID)
-        annotationView.updateForAnnotation(annotation as? DemoAnnotation)
+        DemoAnnotationView(frame: .zero, reuseIdentifier: demoAnnotationViewReuseID)
+        annotationView.annotation = annotation as? DemoAnnotation
         return annotationView
     }
 

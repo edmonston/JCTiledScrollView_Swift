@@ -238,11 +238,11 @@ let kJCTiledScrollViewAnimationTime = TimeInterval(0.1)
     // MARK: Annotation Recycling
 
     func dequeueReusableAnnotationViewWithReuseIdentifier(_ reuseIdentifier: String) -> JCAnnotationView? {
-        let viewToReturn = recycledAnnotationViews.first(where: { $0.reuseIdentifier == reuseIdentifier })
-        if let view = viewToReturn {
+        if let view = recycledAnnotationViews.first(where: { $0.reuseIdentifier == reuseIdentifier }) {
             recycledAnnotationViews.remove(view)
+            return view
         }
-        return viewToReturn
+        return nil
     }
 
     // MARK: Annotations

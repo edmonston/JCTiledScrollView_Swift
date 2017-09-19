@@ -17,7 +17,7 @@ class JCAnnotationView: UIView {
     var position: CGPoint = .zero {
         didSet {
             if !position.equalTo(oldValue) {
-                adjustCenter()
+                recenter()
             }
         }
     }
@@ -25,13 +25,12 @@ class JCAnnotationView: UIView {
     var centerOffset: CGPoint = .zero {
         didSet {
             if !centerOffset.equalTo(oldValue) {
-                adjustCenter()
+                recenter()
             }
         }
     }
 
-    init(frame: CGRect, annotation: JCAnnotation, reuseIdentifier: String) {
-        self.annotation = annotation
+    init(frame: CGRect, reuseIdentifier: String) {
         self.reuseIdentifier = reuseIdentifier
         super.init(frame: frame)
     }
@@ -40,7 +39,7 @@ class JCAnnotationView: UIView {
         fatalError("init(coder:) has not been implemented")
     }
 
-    private func adjustCenter() {
+    private func recenter() {
         center = CGPoint(x: position.x + centerOffset.x, y: position.y + centerOffset.y)
     }
 }

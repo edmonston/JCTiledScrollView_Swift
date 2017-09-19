@@ -19,8 +19,19 @@ class DemoAnnotationView: JCAnnotationView {
         }
     }
 
-    override init(frame: CGRect, annotation: JCAnnotation, reuseIdentifier: String) {
-        super.init(frame: frame, annotation: annotation, reuseIdentifier: reuseIdentifier)
+    override var annotation: JCAnnotation? {
+        didSet {
+            guard let annotation = annotation as? DemoAnnotation else { return }
+            switch (annotation.isSelectable, annotation.isSelected) {
+            case (true, true): markerColor = .yellow
+            case (true, false): markerColor = .red
+            default: markerColor = .darkGray
+            }
+        }
+    }
+    
+    override init(frame: CGRect, reuseIdentifier: String) {
+        super.init(frame: frame, reuseIdentifier: reuseIdentifier)
         backgroundColor = .clear
         markerColor = .black
     }
@@ -61,16 +72,5 @@ class DemoAnnotationView: JCAnnotationView {
 
         dotColor.setFill()
         bezier2Path.fill()
-    }
-
-    func updateForAnnotation(_ annotation: DemoAnnotation?) {
-        self.annotation = annotation
-        let isSelectable = annotation?.isSelectable ?? true
-        let isSelected = annotation?.isSelected ?? false
-        if isSelectable {
-            markerColor = isSelected ? .yellow : .red
-        } else {
-            markerColor = .darkGray
-        }
     }
 }
