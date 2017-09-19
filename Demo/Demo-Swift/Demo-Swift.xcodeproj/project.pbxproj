@@ -430,6 +430,7 @@
 		12C673811A3B22A20031A142 /* DemoAnnotationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12C673801A3B22A20031A142 /* DemoAnnotationView.swift */; };
 		12C673831A3B23570031A142 /* DemoAnnotation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12C673821A3B23570031A142 /* DemoAnnotation.swift */; };
 		12C676AE1A3C6AFA0031A142 /* DemoStyleKit.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12C676AD1A3C6AFA0031A142 /* DemoStyleKit.swift */; };
+		D09901811F70B36600A55272 /* UIView+AutoLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = D09901801F70B36600A55272 /* UIView+AutoLayout.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -872,6 +873,7 @@
 		12C673801A3B22A20031A142 /* DemoAnnotationView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DemoAnnotationView.swift; sourceTree = "<group>"; };
 		12C673821A3B23570031A142 /* DemoAnnotation.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DemoAnnotation.swift; sourceTree = "<group>"; };
 		12C676AD1A3C6AFA0031A142 /* DemoStyleKit.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DemoStyleKit.swift; sourceTree = "<group>"; };
+		D09901801F70B36600A55272 /* UIView+AutoLayout.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "UIView+AutoLayout.swift"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -1325,6 +1327,7 @@
 				12204C341A752F2100E969D7 /* JCAnnotation.swift */,
 				12204C351A752F2100E969D7 /* JCAnnotationTapGestureRecognizer.swift */,
 				12204C371A752F2100E969D7 /* UIScrollView+JCTiledScrollView.swift */,
+				D09901801F70B36600A55272 /* UIView+AutoLayout.swift */,
 			);
 			name = JCTiledScrollView_Swift_Source;
 			path = ../../JCTiledScrollView_Swift_Source;
@@ -1907,6 +1910,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				12C673411A3B218D0031A142 /* ViewController.swift in Sources */,
+				D09901811F70B36600A55272 /* UIView+AutoLayout.swift in Sources */,
 				12204C401A752F2100E969D7 /* JCVisibleAnnotationTuple.swift in Sources */,
 				12204C441A752F2100E969D7 /* UIScrollView+JCTiledScrollView.swift in Sources */,
 				12204C3A1A752F2100E969D7 /* JCTiledLayer.swift in Sources */,
@@ -2047,6 +2051,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				INFOPLIST_FILE = "Demo-Swift/Info.plist";
+				IPHONEOS_DEPLOYMENT_TARGET = 9.0;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
 				PRODUCT_BUNDLE_IDENTIFIER = "com.yichizhang.$(PRODUCT_NAME:rfc1034identifier)";
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -2060,6 +2065,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				INFOPLIST_FILE = "Demo-Swift/Info.plist";
+				IPHONEOS_DEPLOYMENT_TARGET = 9.0;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
 				PRODUCT_BUNDLE_IDENTIFIER = "com.yichizhang.$(PRODUCT_NAME:rfc1034identifier)";
 				PRODUCT_NAME = "$(TARGET_NAME)";

@@ -11,8 +11,7 @@
 
 import UIKit
 
-enum JCDemoType
-{
+enum JCDemoType {
     case pdf
     case image
 }
@@ -30,7 +29,8 @@ let ButtonTitleRemoveAnnotation = "Remove this Annotation"
     var scrollView: JCTiledScrollView!
     var infoLabel: UILabel!
     var searchField: UITextField!
-    var mode: JCDemoType!
+    var mode = JCDemoType.pdf
+    var annotationsAdded = false
 
     weak var selectedAnnotation: JCAnnotation?
 
@@ -39,18 +39,14 @@ let ButtonTitleRemoveAnnotation = "Remove this Annotation"
         super.viewDidLoad()
         // Do any additional setup after loading the view, typically from a nib.
 
-        if (mode == JCDemoType.pdf) {
-            scrollView = JCTiledPDFScrollView(frame: self.view.bounds, URL: Bundle.main.url(forResource: "Map", withExtension: "pdf")!)
+        switch mode {
+        case .pdf: scrollView = JCTiledPDFScrollView(frame: self.view.bounds, URL: Bundle.main.url(forResource: "Map", withExtension: "pdf")!)
+        case .image: scrollView = JCTiledScrollView(frame: self.view.bounds, contentSize: SkippingGirlImageSize)
         }
-        else {
-            scrollView = JCTiledScrollView(frame: self.view.bounds, contentSize: SkippingGirlImageSize)
-        }
-        scrollView.tiledScrollViewDelegate = self
-        scrollView.zoomScale = 1.0
 
+        scrollView.tiledScrollViewDelegate = self
         scrollView.dataSource = self
-        scrollView.tiledScrollViewDelegate = self
-
+        scrollView.zoomScale = 1.0
         scrollView.tiledView.shouldAnnotateRect = true
 
         // totals 4 sets of tiles across all devices, retina devices will miss out on the first 1x set
@@ -59,13 +55,12 @@ let ButtonTitleRemoveAnnotation = "Remove this Annotation"
         scrollView.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(scrollView)
 
-        infoLabel = UILabel(frame: CGRect.zero)
-        infoLabel.backgroundColor = UIColor.black
-        infoLabel.textColor = UIColor.white
-        infoLabel.textAlignment = NSTextAlignment.center
+        infoLabel = UILabel()
+        infoLabel.backgroundColor = .black
+        infoLabel.textColor = .white
+        infoLabel.textAlignment = .center
         infoLabel.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(infoLabel)
-
         view.addConstraints([
                                 NSLayoutConstraint(item: scrollView, attribute: .width, relatedBy: .equal, toItem: view, attribute: .width, multiplier: 1, constant: 0),
                                 NSLayoutConstraint(item: scrollView, attribute: .height, relatedBy: .equal, toItem: view, attribute: .height, multiplier: 1, constant: 0),
@@ -76,19 +71,25 @@ let ButtonTitleRemoveAnnotation = "Remove this Annotation"
                                 NSLayoutConstraint(item: infoLabel, attribute: .centerX, relatedBy: .equal, toItem: view, attribute: .centerX, multiplier: 1, constant: 0),
                             ])
 
+
+    }
+    
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+        guard !annotationsAdded else { return }
+        defer { annotationsAdded = true }
+        scrollView.tiledView.layoutIfNeeded()
         addRandomAnnotations()
         scrollView.refreshAnnotations()
     }
-
-    override func didReceiveMemoryWarning()
-    {
+    
+    override func didReceiveMemoryWarning() {
         super.didReceiveMemoryWarning()
         // Dispose of any resources that can be recreated.
     }
 
-    func addRandomAnnotations()
-    {
-        for number in 0 ... 8 {
+    func addRandomAnnotations() {
+        for number in 0...8 {
             let annotation = DemoAnnotation(isSelectable: (number % 3 != 0))
             annotation.contentPosition = CGPoint(
             x: CGFloat(UInt(arc4random_uniform(UInt32(UInt(scrollView.tiledView.bounds.width))))),
@@ -99,33 +100,25 @@ let ButtonTitleRemoveAnnotation = "Remove this Annotation"
     }
 
     // MARK: JCTiledScrollView Delegate
-    func tiledScrollViewDidZoom(_ scrollView: JCTiledScrollView)
-    {
-
+    func tiledScrollViewDidZoom(_ scrollView: JCTiledScrollView) {
         infoLabel.text = NSString(format: "zoomScale=%.2f", scrollView.zoomScale) as String
     }
 
-    func tiledScrollView(_ scrollView: JCTiledScrollView, didReceiveSingleTap gestureRecognizer: UIGestureRecognizer)
-    {
-
-        let tapPoint: CGPoint = gestureRecognizer.location(in: scrollView.tiledView)
-
+    func tiledScrollView(_ scrollView: JCTiledScrollView, didReceiveSingleTap gestureRecognizer: UIGestureRecognizer) {
+        let tapPoint = gestureRecognizer.location(in: scrollView.tiledView)
         infoLabel.text = NSString(format: "(%.2f, %.2f), zoomScale=%.2f", tapPoint.x, tapPoint.y, scrollView.zoomScale) as String
     }
 
-    func tiledScrollView(_ scrollView: JCTiledScrollView, shouldSelectAnnotationView view: JCAnnotationView) -> Bool
-    {
+    func tiledScrollView(_ scrollView: JCTiledScrollView, shouldSelectAnnotationView view: JCAnnotationView) -> Bool {
         if let annotation = view.annotation as? DemoAnnotation {
             return annotation.isSelectable
         }
         return true
     }
 
-    func tiledScrollView(_ scrollView: JCTiledScrollView, didSelectAnnotationView view: JCAnnotationView)
-    {
-        guard let
-        annotationView = view as? DemoAnnotationView,
-        let annotation = annotationView.annotation as? DemoAnnotation else {
+    func tiledScrollView(_ scrollView: JCTiledScrollView, didSelectAnnotationView view: JCAnnotationView) {
+        guard let annotationView = view as? DemoAnnotationView,
+            let annotation = annotationView.annotation as? DemoAnnotation else {
             return
         }
         let alertView = UIAlertView(
@@ -137,49 +130,37 @@ let ButtonTitleRemoveAnnotation = "Remove this Annotation"
         alertView.show()
 
         selectedAnnotation = annotation
-
         annotation.isSelected = true
         annotationView.updateForAnnotation(annotation)
     }
 
-    func tiledScrollView(_ scrollView: JCTiledScrollView, didDeselectAnnotationView view: JCAnnotationView)
-    {
-        guard let
-        annotationView = view as? DemoAnnotationView,
-        let annotation = annotationView.annotation as? DemoAnnotation else {
+    func tiledScrollView(_ scrollView: JCTiledScrollView, didDeselectAnnotationView view: JCAnnotationView) {
+        guard let annotationView = view as? DemoAnnotationView,
+            let annotation = annotationView.annotation as? DemoAnnotation else {
             return
         }
-
         selectedAnnotation = nil
-
         annotation.isSelected = false
         annotationView.updateForAnnotation(annotation)
     }
 
-    func tiledScrollView(_ scrollView: JCTiledScrollView!, viewForAnnotation annotation: JCAnnotation!) -> JCAnnotationView!
-    {
+    func tiledScrollView(_ scrollView: JCTiledScrollView!, viewForAnnotation annotation: JCAnnotation) -> JCAnnotationView? {
         var annotationView: DemoAnnotationView!
         annotationView =
         (scrollView.dequeueReusableAnnotationViewWithReuseIdentifier(demoAnnotationViewReuseID) as? DemoAnnotationView) ??
         DemoAnnotationView(frame: CGRect.zero, annotation: annotation, reuseIdentifier: demoAnnotationViewReuseID)
-
         annotationView.updateForAnnotation(annotation as? DemoAnnotation)
-
         return annotationView
     }
 
-    func tiledScrollView(_ scrollView: JCTiledScrollView, imageForRow row: Int, column: Int, scale: Int) -> UIImage!
-    {
-
+    func tiledScrollView(_ scrollView: JCTiledScrollView, imageForRow row: Int, column: Int, scale: Int) -> UIImage? {
         let fileName = NSString(format: "%@_%dx_%d_%d.png", SkippingGirlImageName, scale, row, column) as String
         return UIImage(named: fileName)
 
     }
 
     // MARK: UIAlertView Delegate
-    func alertView(_ alertView: UIAlertView, clickedButtonAt buttonIndex: Int)
-    {
-
+    func alertView(_ alertView: UIAlertView, clickedButtonAt buttonIndex: Int) {
         guard let buttonTitle = alertView.buttonTitle(at: buttonIndex) else {
             return
         }
@@ -193,7 +174,6 @@ let ButtonTitleRemoveAnnotation = "Remove this Annotation"
         default:
             break
         }
-
     }
 }
 

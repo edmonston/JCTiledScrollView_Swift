@@ -11,37 +11,29 @@
 
 import UIKit
 
-class DemoAnnotationView: JCAnnotationView
-{
-    var markerColor: UIColor!
-    {
-        didSet
-        {
+class DemoAnnotationView: JCAnnotationView {
+    var markerColor: UIColor = .red {
+        didSet {
             sizeToFit()
             setNeedsDisplay()
         }
     }
 
-    override init(frame: CGRect, annotation: JCAnnotation, reuseIdentifier: String)
-    {
+    override init(frame: CGRect, annotation: JCAnnotation, reuseIdentifier: String) {
         super.init(frame: frame, annotation: annotation, reuseIdentifier: reuseIdentifier)
-
-        backgroundColor = UIColor.clear
-        markerColor = UIColor.black
+        backgroundColor = .clear
+        markerColor = .black
     }
 
-    required init?(coder aDecoder: NSCoder)
-    {
+    required init?(coder aDecoder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
 
-    override func sizeThatFits(_ size: CGSize) -> CGSize
-    {
+    override func sizeThatFits(_ size: CGSize) -> CGSize {
         return CGSize(width: 64, height: 64)
     }
 
-    override func draw(_ rect: CGRect)
-    {
+    override func draw(_ rect: CGRect) {
         // Marker
         let bezierPath = UIBezierPath()
         bezierPath.move(to: CGPoint(x: 32, y: 8))
@@ -57,7 +49,6 @@ class DemoAnnotationView: JCAnnotationView
         markerColor.setFill()
         bezierPath.fill()
 
-
         // The dot on the marker
         let dotColor = UIColor.white
         let bezier2Path = UIBezierPath()
@@ -72,18 +63,14 @@ class DemoAnnotationView: JCAnnotationView
         bezier2Path.fill()
     }
 
-    func updateForAnnotation(_ annotation: DemoAnnotation?)
-    {
+    func updateForAnnotation(_ annotation: DemoAnnotation?) {
         self.annotation = annotation
-
         let isSelectable = annotation?.isSelectable ?? true
         let isSelected = annotation?.isSelected ?? false
-
         if isSelectable {
-            markerColor = isSelected ? UIColor.yellow : UIColor.red
-        }
-        else {
-            markerColor = UIColor.darkGray
+            markerColor = isSelected ? .yellow : .red
+        } else {
+            markerColor = .darkGray
         }
     }
 }

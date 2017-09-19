@@ -12,26 +12,17 @@
 import UIKit
 import QuartzCore
 
-@objc protocol JCTiledViewDelegate
-{
-
-}
-
-@objc protocol JCTiledBitmapViewDelegate: JCTiledViewDelegate
-{
+@objc protocol JCTiledViewDelegate {
     func tiledView(_ tiledView: JCTiledView, imageForRow row: Int, column: Int, scale: Int) -> UIImage!
 }
 
 let kJCDefaultTileSize: CGFloat = 256.0
 
-class JCTiledView: UIView
-{
+class JCTiledView: UIView {
     weak var delegate: JCTiledViewDelegate?
 
-    var tileSize: CGSize = CGSize(width: kJCDefaultTileSize, height: kJCDefaultTileSize)
-    {
-        didSet
-        {
+    var tileSize: CGSize = CGSize(width: kJCDefaultTileSize, height: kJCDefaultTileSize) {
+        didSet {
             let scaledTileSize = self.tileSize.applying(CGAffineTransform(scaleX: self.contentScaleFactor, y: self.contentScaleFactor))
             self.tiledLayer().tileSize = scaledTileSize
         }
@@ -39,8 +30,7 @@ class JCTiledView: UIView
 
     var shouldAnnotateRect: Bool = false
 
-    var numberOfZoomLevels: size_t
-    {
+    var numberOfZoomLevels: size_t {
         get
         {
             return self.tiledLayer().levelsOfDetailBias
@@ -68,6 +58,7 @@ class JCTiledView: UIView
         self.tiledLayer().tileSize = scaledTileSize
         self.tiledLayer().levelsOfDetail = 1
         self.numberOfZoomLevels = 3
+        self.backgroundColor = .green
     }
 
     required init?(coder aDecoder: NSCoder)
@@ -83,7 +74,7 @@ class JCTiledView: UIView
         let col = Int(rect.minX * scale / self.tileSize.width)
         let row = Int(rect.minY * scale / self.tileSize.height)
 
-        let tileImage = (self.delegate as! JCTiledBitmapViewDelegate).tiledView(self, imageForRow: row, column: col, scale: Int(scale))
+        let tileImage = delegate?.tiledView(self, imageForRow: row, column: col, scale: Int(scale))
         tileImage?.draw(in: rect)
 
         if (self.shouldAnnotateRect) {

@@ -20,8 +20,7 @@ class JCTiledPDFScrollView: JCTiledScrollView, JCPDFTiledViewDelegate
     fileprivate var mediaBoxRect = CGRect.zero
     fileprivate var effectiveRect = CGRect.zero
 
-    override class func tiledLayerClass() -> AnyClass
-    {
+    override class func tiledViewClass() -> JCTiledView.Type {
         return JCPDFTiledView.self
     }
 

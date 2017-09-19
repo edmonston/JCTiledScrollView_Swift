@@ -11,13 +11,7 @@
 
 import UIKit
 
-class JCAnnotationTapGestureRecognizer: UITapGestureRecognizer
-{
+class JCAnnotationTapGestureRecognizer: UITapGestureRecognizer {
     var tapAnnotation: JCVisibleAnnotationTuple?
-
-    override init(target: Any?, action: Selector?)
-    {
-        super.init(target: target, action: action)
-    }
 }
 
