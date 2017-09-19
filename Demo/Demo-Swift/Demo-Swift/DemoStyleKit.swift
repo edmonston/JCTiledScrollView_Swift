@@ -11,7 +11,7 @@
 
 import UIKit
 
-public class DemoStyleKit: NSObject
+open class DemoStyleKit: NSObject
 {
     class var mainFont: UIFont
     {
@@ -20,7 +20,7 @@ public class DemoStyleKit: NSObject
 
     //// Cache
 
-    private struct Cache
+    fileprivate struct Cache
     {
         static var imageDict: [String:UIImage] = Dictionary()
         //        static var oneTargets: [AnyObject]?
@@ -28,35 +28,35 @@ public class DemoStyleKit: NSObject
 
     //// Drawing Methods
 
-    public class func drawString(string: String)
+    open class func drawString(_ string: String)
     {
         //// General Declarations
         let context = UIGraphicsGetCurrentContext()
 
         //// Text Drawing
-        let textRect = CGRectMake(0, 0, 25, 25)
+        let textRect = CGRect(x: 0, y: 0, width: 25, height: 25)
         let textTextContent = NSString(string: string)
-        let textStyle = NSMutableParagraphStyle.defaultParagraphStyle().mutableCopy() as! NSMutableParagraphStyle
-        textStyle.alignment = NSTextAlignment.Center
+        let textStyle = NSMutableParagraphStyle.default.mutableCopy() as! NSMutableParagraphStyle
+        textStyle.alignment = NSTextAlignment.center
 
-        let textFontAttributes = [NSFontAttributeName: DemoStyleKit.mainFont, NSForegroundColorAttributeName: UIColor.blackColor(), NSParagraphStyleAttributeName: textStyle]
+        let textFontAttributes = [NSFontAttributeName: DemoStyleKit.mainFont, NSForegroundColorAttributeName: UIColor.black, NSParagraphStyleAttributeName: textStyle]
 
-        let textTextHeight: CGFloat = textTextContent.boundingRectWithSize(CGSizeMake(textRect.width, CGFloat.infinity), options: NSStringDrawingOptions.UsesLineFragmentOrigin, attributes: textFontAttributes, context: nil).size.height
-        CGContextSaveGState(context)
-        CGContextClipToRect(context, textRect)
-        textTextContent.drawInRect(CGRectMake(textRect.minX, textRect.minY + (textRect.height - textTextHeight) / 2, textRect.width, textTextHeight), withAttributes: textFontAttributes)
-        CGContextRestoreGState(context)
+        let textTextHeight: CGFloat = textTextContent.boundingRect(with: CGSize(width: textRect.width, height: CGFloat.infinity), options: NSStringDrawingOptions.usesLineFragmentOrigin, attributes: textFontAttributes, context: nil).size.height
+        context?.saveGState()
+        context?.clip(to: textRect)
+        textTextContent.draw(in: CGRect(x: textRect.minX, y: textRect.minY + (textRect.height - textTextHeight) / 2, width: textRect.width, height: textTextHeight), withAttributes: textFontAttributes)
+        context?.restoreGState()
     }
 
     //// Generated Images
 
-    public class func imageOfString(string: String) -> UIImage
+    open class func imageOfString(_ string: String) -> UIImage
     {
         if let image = Cache.imageDict[string] {
             return image
         }
 
-        UIGraphicsBeginImageContextWithOptions(CGSizeMake(25, 25), false, 0)
+        UIGraphicsBeginImageContextWithOptions(CGSize(width: 25, height: 25), false, 0)
         DemoStyleKit.drawString(string)
 
         let image = UIGraphicsGetImageFromCurrentImageContext()!
