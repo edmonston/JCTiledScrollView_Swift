@@ -11,6 +11,12 @@
 import UIKit
 
 class JCAnnotation: NSObject {
-    var contentPosition = CGPoint.zero
+    let contentPosition: CGPoint
+    let identifier: String
+    
+    init(identifier: String, contentPosition: CGPoint) {
+        self.contentPosition = contentPosition
+        self.identifier = identifier
+    }
 }
 

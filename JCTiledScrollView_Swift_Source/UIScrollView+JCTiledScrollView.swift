@@ -26,7 +26,7 @@ extension UIScrollView {
         var newContentOffset = contentOffset
 
         if contentSize.width > bounds.size.width {
-            newContentOffset.x = max(0.0, (center.x * zoomScale) - (self.bounds.size.width / 2.0))
+            newContentOffset.x = max(0.0, (center.x * zoomScale) - (bounds.size.width / 2.0))
             newContentOffset.x = min(newContentOffset.x, (contentSize.width - bounds.size.width))
         }
         if contentSize.height > self.bounds.size.height {

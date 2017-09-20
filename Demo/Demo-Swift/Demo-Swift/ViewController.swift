@@ -103,11 +103,9 @@ let ButtonTitleRemoveAnnotation = "Remove this Annotation"
 
     func addRandomAnnotations() {
         for number in 0...8 {
-            let annotation = DemoAnnotation(isSelectable: (number % 3 != 0))
-            annotation.contentPosition = CGPoint(
-            x: CGFloat(UInt(arc4random_uniform(UInt32(UInt(scrollView.tiledView.bounds.width))))),
-            y: CGFloat(UInt(arc4random_uniform(UInt32(UInt(scrollView.tiledView.bounds.height)))))
-            )
+            let randomPoint = scrollView.tiledView.bounds.randomPointInside()
+            let annotation = DemoAnnotation(identifier: String(describing: number), contentPosition: randomPoint)
+            annotation.isSelectable = (number % 3 != 0)
             scrollView.addAnnotation(annotation)
         }
     }
@@ -158,8 +156,7 @@ let ButtonTitleRemoveAnnotation = "Remove this Annotation"
     }
 
     func tiledScrollView(_ scrollView: JCTiledScrollView!, viewForAnnotation annotation: JCAnnotation) -> JCAnnotationView? {
-        var annotationView: DemoAnnotationView!
-        annotationView =
+        let annotationView =
         (scrollView.dequeueReusableAnnotationViewWithReuseIdentifier(demoAnnotationViewReuseID) as? DemoAnnotationView) ??
         DemoAnnotationView(frame: .zero, reuseIdentifier: demoAnnotationViewReuseID)
         annotationView.annotation = annotation as? DemoAnnotation

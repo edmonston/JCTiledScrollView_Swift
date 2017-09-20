@@ -40,8 +40,7 @@ let kJCTiledScrollViewAnimationTime = TimeInterval(0.1)
 
     //Views
     lazy var tiledView: JCTiledView = {
-        let tiledView = type(of: self).tiledViewClass().init()
-        return tiledView
+        return type(of: self).tiledViewClass().init()
     }()
     
     let scrollView: UIScrollView = {
@@ -65,19 +64,21 @@ let kJCTiledScrollViewAnimationTime = TimeInterval(0.1)
     var zoomsToTouchLocation = false
     var zoomsOutOnTwoFingerTap = true
 
-    var levelsOfZoom: UInt = 2 {
+    var levelsOfZoom = 2 {
         didSet {
             scrollView.maximumZoomScale = pow(2.0, max(0.0, CGFloat(levelsOfZoom)))
         }
     }
-    var levelsOfDetail: UInt = 2 {
+    
+    var levelsOfDetail = 2 {
         didSet  {
             if levelsOfDetail == 1 {
                 print("Note: Setting levelsOfDetail to 1 causes strange behaviour")
             }
-            tiledView.numberOfZoomLevels = size_t(levelsOfDetail)
+            tiledView.numberOfZoomLevels = levelsOfDetail
         }
     }
+    
     var zoomScale: CGFloat {
         set {
             setZoomScale(newValue, animated: false)
@@ -91,7 +92,7 @@ let kJCTiledScrollViewAnimationTime = TimeInterval(0.1)
         didSet {
             // FIXME: Jesse C - I don't like overloading this here, but the logic is in one place
 
-            isUserInteractionEnabled = !self.muteAnnotationUpdates
+            isUserInteractionEnabled = !muteAnnotationUpdates
             if !muteAnnotationUpdates {
                 correctScreenPositionOfAnnotations()
             }
@@ -167,7 +168,7 @@ let kJCTiledScrollViewAnimationTime = TimeInterval(0.1)
             for annotation in annotations {
                 let position = screenPosition(for: annotation)
                 let t = visibleAnnotations.visibleAnnotationTuple(for: annotation)
-                if position.jc_isWithinBounds(bounds) {
+                if position.isInside(bounds, insetBy: -25) {
                     if let t = t {
                         if t == currentSelectedAnnotationTuple {
                             canvasView.addSubview(t.view)
@@ -177,6 +178,7 @@ let kJCTiledScrollViewAnimationTime = TimeInterval(0.1)
                         view.position = position
                         let t = JCVisibleAnnotationTuple(annotation: annotation, view: view)
                         tiledScrollViewDelegate?.tiledScrollView?(self, annotationWillAppear: t.annotation)
+                        /////
                         visibleAnnotations.insert(t)
                         canvasView.addSubview(t.view)
                         CATransaction.setValue(kCFBooleanTrue, forKey: kCATransactionDisableActions)
@@ -197,6 +199,7 @@ let kJCTiledScrollViewAnimationTime = TimeInterval(0.1)
                         if t != currentSelectedAnnotationTuple {
                             t.view.removeFromSuperview()
                             recycledAnnotationViews.insert(t.view)
+                            //////
                             visibleAnnotations.remove(t)
                         } else {
                             // FIXME: Anthony D - I don't like let the view in visible annotations array, but the logic is in one place
@@ -258,9 +261,10 @@ let kJCTiledScrollViewAnimationTime = TimeInterval(0.1)
     func addAnnotation(_ annotation: JCAnnotation) {
         annotations.insert(annotation)
         let position = screenPosition(for: annotation)
-        guard position.jc_isWithinBounds(bounds),
+        guard position.isInside(bounds, insetBy: -25),
             let view = tiledScrollViewDelegate?.tiledScrollView(self, viewForAnnotation: annotation) else { return }
         view.position = position
+        ////
         visibleAnnotations.insert(JCVisibleAnnotationTuple(annotation: annotation, view: view))
         canvasView.addSubview(view)
     }
@@ -273,6 +277,7 @@ let kJCTiledScrollViewAnimationTime = TimeInterval(0.1)
         guard annotations.contains(annotation) else { return }
         if let t = visibleAnnotations.visibleAnnotationTuple(for: annotation) {
             t.view.removeFromSuperview()
+            ////
             visibleAnnotations.remove(t)
         }
         annotations.remove(annotation)

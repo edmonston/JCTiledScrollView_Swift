@@ -11,15 +11,7 @@
 
 import UIKit
 
-class DemoAnnotation: JCAnnotation
-{
+class DemoAnnotation: JCAnnotation {
     var isSelectable = false
     var isSelected = false
-
-    init(isSelectable: Bool)
-    {
-        super.init()
-
-        self.isSelectable = isSelectable
-    }
 }
