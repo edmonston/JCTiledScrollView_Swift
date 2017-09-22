@@ -158,6 +158,7 @@ let ButtonTitleRemoveAnnotation = "Remove this Annotation"
         (scrollView.dequeueReusableAnnotationViewWithReuseIdentifier(demoAnnotationViewReuseID) as? DemoAnnotationView) ??
         DemoAnnotationView(frame: .zero, reuseIdentifier: demoAnnotationViewReuseID)
         annotationView.annotation = annotation as? DemoAnnotation
+        annotationView.isSelected = selectedAnnotation?.identifier == annotation.identifier
         return annotationView
     }
 

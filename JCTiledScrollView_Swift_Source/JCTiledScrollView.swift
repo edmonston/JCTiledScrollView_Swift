@@ -101,10 +101,47 @@ let kJCTiledScrollViewAnimationTime = TimeInterval(0.1)
 
     fileprivate var annotations = Set<JCAnnotation>()
     fileprivate var recycledAnnotationViews = Set<JCAnnotationView>()
-    fileprivate var visibleAnnotations = Set<JCVisibleAnnotationTuple>()
-    fileprivate var previousSelectedAnnotationTuple: JCVisibleAnnotationTuple?
-    fileprivate var currentSelectedAnnotationTuple: JCVisibleAnnotationTuple?
+ //   fileprivate var visibleAnnotations = Set<JCVisibleAnnotationTuple>()
+    fileprivate var visibleAnnotationViews = Set<JCAnnotationView>()
+    fileprivate var selectedAnnotationView: JCAnnotationView?
 
+    func visibleView(for annotation: JCAnnotation) -> JCAnnotationView? {
+        return visibleAnnotationViews.first { $0.annotation?.identifier == annotation.identifier }
+    }
+    
+    func move(_ annotationView: JCAnnotationView, to position: CGPoint) {
+        annotationView.position = position
+    }
+    
+    func add(_ annotationView: JCAnnotationView, at position: CGPoint) {
+        assert(annotationView.annotation != nil, "Visible views must have a non-nil annotation")
+        guard let annotation = annotationView.annotation else { return }
+        
+        tiledScrollViewDelegate?.tiledScrollView?(self, annotationWillAppear: annotation)
+        canvasView.addSubview(annotationView)
+        visibleAnnotationViews.insert(annotationView)
+        annotationView.position = position
+        CATransaction.setValue(kCFBooleanTrue, forKey: kCATransactionDisableActions)
+        let animation = CABasicAnimation(keyPath: "opacity")
+        animation.duration = 0.3
+        animation.repeatCount = 1
+        animation.fromValue = 0.0
+        animation.toValue = 1.0
+        annotationView.layer.add(animation, forKey: "animateOpacity")
+        tiledScrollViewDelegate?.tiledScrollView?(self, annotationDidAppear: annotation)
+    }
+    
+    func remove(_ annotationView: JCAnnotationView) {
+        assert(annotationView.annotation != nil, "Visible views must have a non-nil annotation")
+        guard let annotation = annotationView.annotation else { return }
+        tiledScrollViewDelegate?.tiledScrollView?(self, annotationWillDisappear: annotation)
+        visibleAnnotationViews.remove(annotationView)
+        recycledAnnotationViews.insert(annotationView)
+        annotationView.removeFromSuperview()
+        tiledScrollViewDelegate?.tiledScrollView?(self, annotationDidDisappear: annotation)
+    }
+    
+    
     private lazy var singleTapGestureRecognizer: UITapGestureRecognizer = {
         let gestureRecognizer = UITapGestureRecognizer(target: self, action: #selector(JCTiledScrollView.singleTapReceived))
         gestureRecognizer.numberOfTapsRequired = 1
@@ -163,52 +200,28 @@ let kJCTiledScrollViewAnimationTime = TimeInterval(0.1)
         CATransaction.begin()
         CATransaction.setAnimationDuration(0.0)
         if (scrollView.isZoomBouncing || muteAnnotationUpdates) && !scrollView.isZooming {
-            visibleAnnotations.forEach { $0.view.position = screenPosition(for: $0.annotation) }
+            visibleAnnotationViews.forEach { view in
+                guard let annotation = view.annotation else { return }
+                view.position = screenPosition(for: annotation)
+            }
         } else {
             for annotation in annotations {
-                let position = screenPosition(for: annotation)
-                let t = visibleAnnotations.visibleAnnotationTuple(for: annotation)
-                if position.isInside(bounds, insetBy: -25) {
-                    if let t = t {
-                        if t == currentSelectedAnnotationTuple {
-                            canvasView.addSubview(t.view)
-                        }
-                        t.view.position = position
-                    } else if let view = tiledScrollViewDelegate?.tiledScrollView(self, viewForAnnotation: annotation) {
-                        view.position = position
-                        let t = JCVisibleAnnotationTuple(annotation: annotation, view: view)
-                        tiledScrollViewDelegate?.tiledScrollView?(self, annotationWillAppear: t.annotation)
-                        visibleAnnotations.insert(t)
-                        canvasView.addSubview(t.view)
-                        CATransaction.setValue(kCFBooleanTrue, forKey: kCATransactionDisableActions)
-                        let animation = CABasicAnimation(keyPath: "opacity")
-                        animation.duration = 0.3
-                        animation.repeatCount = 1
-                        animation.fromValue = 0.0
-                        animation.toValue = 1.0
-                        t.view.layer.add(animation, forKey: "animateOpacity")
-                        tiledScrollViewDelegate?.tiledScrollView?(self, annotationDidAppear: t.annotation)
-                    } else {
-                        // view is nil
-                        continue
+                let newPosition = screenPosition(for: annotation)
+                let alreadyVisibleView = visibleView(for: annotation)
+                let isVisible = newPosition.isInside(bounds, insetBy: -25)
+                switch (alreadyVisibleView, isVisible) {
+                case (let annotationView?, true):
+                    move(annotationView, to: newPosition)
+                case (let annotationView?, false):
+                    remove(annotationView)
+                case (nil, true):
+                    if let annotationView = tiledScrollViewDelegate?.tiledScrollView(self, viewForAnnotation: annotation) {
+                        add(annotationView, at: newPosition)
                     }
-                } else {
-                    if let t = t {
-                        tiledScrollViewDelegate?.tiledScrollView?(self, annotationWillAppear: t.annotation)
-                        if t != currentSelectedAnnotationTuple {
-                            t.view.removeFromSuperview()
-                            recycledAnnotationViews.insert(t.view)
-                            //////
-                            visibleAnnotations.remove(t)
-                        } else {
-                            // FIXME: Anthony D - I don't like let the view in visible annotations array, but the logic is in one place
-                            t.view.removeFromSuperview()
-                        }
-                        tiledScrollViewDelegate?.tiledScrollView?(self, annotationDidDisappear: t.annotation)
-                    }
-                } // if screenPosition.jc_isWithinBounds(bounds)
-            } // for obj in annotations
-        }// if (scrollView.zoomBouncing || muteAnnotationUpdates) && !scrollView.zooming
+                case (nil, false): break
+                }
+            }
+        }
         CATransaction.commit()
     }
 
@@ -251,10 +264,10 @@ let kJCTiledScrollViewAnimationTime = TimeInterval(0.1)
 
     func refreshAnnotations() {
         correctScreenPositionOfAnnotations()
-        annotations.flatMap { visibleAnnotations.visibleAnnotationTuple(for: $0) }.forEach { t in
-            t.view.setNeedsLayout()
-            t.view.setNeedsDisplay()
-        }
+//        annotations.flatMap { visibleAnnotations.visibleAnnotationTuple(for: $0) }.forEach { t in
+//            t.view.setNeedsLayout()
+//            t.view.setNeedsDisplay()
+//        }
     }
 
     func addAnnotation(_ annotation: JCAnnotation) {
@@ -262,9 +275,7 @@ let kJCTiledScrollViewAnimationTime = TimeInterval(0.1)
         let position = screenPosition(for: annotation)
         guard position.isInside(bounds, insetBy: -25),
             let view = tiledScrollViewDelegate?.tiledScrollView(self, viewForAnnotation: annotation) else { return }
-        view.position = position
-        visibleAnnotations.insert(JCVisibleAnnotationTuple(annotation: annotation, view: view))
-        canvasView.addSubview(view)
+        add(view, at: position)
     }
 
     func addAnnotations(_ annotations: [JCAnnotation]) {
@@ -272,12 +283,9 @@ let kJCTiledScrollViewAnimationTime = TimeInterval(0.1)
     }
 
     func removeAnnotation(_ annotation: JCAnnotation) {
-        guard annotations.contains(annotation) else { return }
-        if let t = visibleAnnotations.visibleAnnotationTuple(for: annotation) {
-            t.view.removeFromSuperview()
-            visibleAnnotations.remove(t)
-        }
-        annotations.remove(annotation)
+        guard let annotationToRemove = annotations.remove(annotation) else { return }
+        guard let annotationViewToRemove = visibleView(for: annotationToRemove) else { return }
+        remove(annotationViewToRemove)
     }
 
     func removeAnnotations(_ annotations: [JCAnnotation]) {
@@ -320,37 +328,32 @@ extension JCTiledScrollView: JCTiledViewDelegate {
 extension JCTiledScrollView: UIGestureRecognizerDelegate {
 
     @objc fileprivate func singleTapReceived(_ gestureRecognizer: UITapGestureRecognizer) {
-        var ta: JCVisibleAnnotationTuple? = nil
-        for t in visibleAnnotations {
-            if t.view.point(inside: gestureRecognizer.location(in: t.view), with: nil) {
-                ta = JCVisibleAnnotationTuple(annotation: t.annotation, view: t.view)
-                break
-            }
+        let newlyTappedAnnotationView = visibleAnnotationViews.first { annotationView in
+            annotationView.point(inside: gestureRecognizer.location(in: annotationView), with: nil)
         }
         
-        previousSelectedAnnotationTuple = currentSelectedAnnotationTuple
-        currentSelectedAnnotationTuple = ta
+        let previouslySelectedAnnotationView = selectedAnnotationView
+        selectedAnnotationView = newlyTappedAnnotationView
+        var selectionBlocked = false
         
-        if let tapAnnotation = ta {
-            if let previousSelectedAnnotationTuple = previousSelectedAnnotationTuple {
-                tiledScrollViewDelegate?.tiledScrollView?(self, didDeselectAnnotationView: previousSelectedAnnotationTuple.view)
-            }
-            let currentSelectedAnnotationView = tapAnnotation.view
-            if (tiledScrollViewDelegate?.tiledScrollView?(self, shouldSelectAnnotationView: currentSelectedAnnotationView) ?? true) {
-                tiledScrollViewDelegate?.tiledScrollView?(self, didSelectAnnotationView: currentSelectedAnnotationView)
+        if let annotationView = newlyTappedAnnotationView {
+            if tiledScrollViewDelegate?.tiledScrollView?(self, shouldSelectAnnotationView: annotationView) ?? true {
+                tiledScrollViewDelegate?.tiledScrollView?(self, didSelectAnnotationView: annotationView)
             } else {
-                tiledScrollViewDelegate?.tiledScrollView?(self, didReceiveSingleTap: gestureRecognizer)
+                selectionBlocked = true
             }
-        } else {
-            if let previousSelectedAnnotationTuple = previousSelectedAnnotationTuple {
-                tiledScrollViewDelegate?.tiledScrollView?(self, didDeselectAnnotationView: previousSelectedAnnotationTuple.view)
-            } else if centerSingleTap {
+        }
+        if let annotationView = previouslySelectedAnnotationView {
+            tiledScrollViewDelegate?.tiledScrollView?(self, didDeselectAnnotationView: annotationView)
+        }
+        if newlyTappedAnnotationView == nil || selectionBlocked {
+            if centerSingleTap {
                 setContentCenter(gestureRecognizer.location(in: tiledView), animated: true)
             }
             tiledScrollViewDelegate?.tiledScrollView?(self, didReceiveSingleTap: gestureRecognizer)
         }
     }
-
+    
     @objc fileprivate func doubleTapReceived(_ gestureRecognizer: UITapGestureRecognizer) {
         if zoomsInOnDoubleTap {
             let newZoom = scrollView.jc_zoomScaleByZoomingIn(1.0)
