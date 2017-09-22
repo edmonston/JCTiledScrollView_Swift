@@ -128,8 +128,7 @@ let ButtonTitleRemoveAnnotation = "Remove this Annotation"
     }
 
     func tiledScrollView(_ scrollView: JCTiledScrollView, didSelectAnnotationView view: JCAnnotationView) {
-        guard let annotationView = view as? DemoAnnotationView,
-            let annotation = annotationView.annotation as? DemoAnnotation else {
+        guard let annotationView = view as? DemoAnnotationView else {
             return
         }
         let alertView = UIAlertView(
@@ -140,19 +139,18 @@ let ButtonTitleRemoveAnnotation = "Remove this Annotation"
         otherButtonTitles: ButtonTitleRemoveAnnotation)
         alertView.show()
 
-        selectedAnnotation = annotation
-        annotation.isSelected = true
-        annotationView.annotation = annotation
+        selectedAnnotation = view.annotation
+        annotationView.isSelected = true
+  //      annotationView.annotation = annotation
     }
 
     func tiledScrollView(_ scrollView: JCTiledScrollView, didDeselectAnnotationView view: JCAnnotationView) {
-        guard let annotationView = view as? DemoAnnotationView,
-            let annotation = annotationView.annotation as? DemoAnnotation else {
+        guard let annotationView = view as? DemoAnnotationView else {
             return
         }
         selectedAnnotation = nil
-        annotation.isSelected = false
-        annotationView.annotation = annotation
+        annotationView.isSelected = false
+     //   annotationView.annotation = annotation
     }
 
     func tiledScrollView(_ scrollView: JCTiledScrollView!, viewForAnnotation annotation: JCAnnotation) -> JCAnnotationView? {

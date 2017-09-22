@@ -12,28 +12,31 @@
 import UIKit
 
 class DemoAnnotationView: JCAnnotationView {
-    var markerColor: UIColor = .red {
-        didSet {
-            sizeToFit()
-            setNeedsDisplay()
+    var markerColor: UIColor {
+        guard let annotation = annotation as? DemoAnnotation else {return .red }
+        switch (annotation.isSelectable, isSelected) {
+        case (true, true): return .yellow
+        case (true, false): return .red
+        default: return .darkGray
         }
     }
 
+    var isSelected: Bool = false {
+        didSet {
+            setNeedsDisplay()
+        }
+    }
+    
     override var annotation: JCAnnotation? {
         didSet {
-            guard let annotation = annotation as? DemoAnnotation else { return }
-            switch (annotation.isSelectable, annotation.isSelected) {
-            case (true, true): markerColor = .yellow
-            case (true, false): markerColor = .red
-            default: markerColor = .darkGray
-            }
+            setNeedsDisplay()
         }
     }
     
     override init(frame: CGRect, reuseIdentifier: String) {
         super.init(frame: frame, reuseIdentifier: reuseIdentifier)
+        sizeToFit()
         backgroundColor = .clear
-        markerColor = .black
     }
 
     required init?(coder aDecoder: NSCoder) {
