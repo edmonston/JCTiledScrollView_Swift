@@ -153,7 +153,7 @@ let ButtonTitleRemoveAnnotation = "Remove this Annotation"
      //   annotationView.annotation = annotation
     }
 
-    func tiledScrollView(_ scrollView: JCTiledScrollView!, viewForAnnotation annotation: JCAnnotation) -> JCAnnotationView? {
+    func tiledScrollView(_ scrollView: JCTiledScrollView, viewForAnnotation annotation: JCAnnotation) -> JCAnnotationView? {
         let annotationView =
         (scrollView.dequeueReusableAnnotationViewWithReuseIdentifier(demoAnnotationViewReuseID) as? DemoAnnotationView) ??
         DemoAnnotationView(frame: .zero, reuseIdentifier: demoAnnotationViewReuseID)
