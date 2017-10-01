@@ -10,11 +10,11 @@
 
 import UIKit
 
-class JCAnnotation: NSObject {
-    let contentPosition: CGPoint
-    let identifier: String
+open class JCAnnotation: NSObject {
+    public let contentPosition: CGPoint
+    public let identifier: String
     
-    init(identifier: String, contentPosition: CGPoint) {
+    public init(identifier: String, contentPosition: CGPoint) {
         self.contentPosition = contentPosition
         self.identifier = identifier
     }

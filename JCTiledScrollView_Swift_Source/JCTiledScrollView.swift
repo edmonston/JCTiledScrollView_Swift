@@ -12,7 +12,7 @@ import UIKit
 
 let kJCTiledScrollViewAnimationTime = TimeInterval(0.1)
 
-@objc protocol JCTiledScrollViewDelegate: NSObjectProtocol {
+@objc public protocol JCTiledScrollViewDelegate: NSObjectProtocol {
     func tiledScrollView(_ scrollView: JCTiledScrollView, viewForAnnotation annotation: JCAnnotation) -> JCAnnotationView?
 
     @objc optional func tiledScrollViewDidZoom(_ scrollView: JCTiledScrollView)
@@ -31,21 +31,21 @@ let kJCTiledScrollViewAnimationTime = TimeInterval(0.1)
     @objc optional func tiledScrollView(_ scrollView: JCTiledScrollView, didReceiveTwoFingerTap gestureRecognizer: UIGestureRecognizer)
 }
 
-@objc protocol JCTileSource: NSObjectProtocol {
+@objc public protocol JCTileSource: NSObjectProtocol {
     func tiledScrollView(_ scrollView: JCTiledScrollView, imageForRow row: Int, column: Int, scale: Int) -> UIImage?
 }
 
-@objc class JCTiledScrollView: UIView {
+@objc public class JCTiledScrollView: UIView {
     //Delegates
-    weak var tiledScrollViewDelegate: JCTiledScrollViewDelegate?
-    weak var dataSource: JCTileSource?
+    public weak var tiledScrollViewDelegate: JCTiledScrollViewDelegate?
+    public weak var dataSource: JCTileSource?
 
     //Views
     lazy var tiledView: JCTiledView = {
         return type(of: self).tiledViewClass().init()
     }()
     
-    let scrollView: UIScrollView = {
+    public let scrollView: UIScrollView = {
         let scrollView = UIScrollView()
         scrollView.backgroundColor = .white
         scrollView.bouncesZoom = true
@@ -54,6 +54,10 @@ let kJCTiledScrollViewAnimationTime = TimeInterval(0.1)
         return scrollView
     }()
     
+    public var tiledViewSize: CGSize {
+        return tiledView.bounds.size
+    }
+    
     fileprivate let canvasView: UIView = {
         let canvasView = UIView()
         canvasView.isUserInteractionEnabled = false
@@ -61,18 +65,23 @@ let kJCTiledScrollViewAnimationTime = TimeInterval(0.1)
     }()
 
     //Default gesture behvaiour
-    var centerSingleTap = true
-    var zoomsInOnDoubleTap = true
-    var zoomsToTouchLocation = false
-    var zoomsOutOnTwoFingerTap = true
 
-    var levelsOfZoom = 2 {
+    public var centerSingleTap = true
+    public var zoomsInOnDoubleTap = true
+    public var zoomsToTouchLocation = false
+    public var zoomsOutOnTwoFingerTap = true
+
+    public var annotatesRect = false {
+        didSet { self.tiledView.shouldAnnotateRect = annotatesRect }
+    }
+    
+    public var levelsOfZoom = 2 {
         didSet {
             scrollView.maximumZoomScale = pow(2.0, max(0.0, CGFloat(levelsOfZoom)))
         }
     }
     
-    var levelsOfDetail = 2 {
+    public var levelsOfDetail = 2 {
         didSet  {
             if levelsOfDetail == 1 {
                 print("Note: Setting levelsOfDetail to 1 causes strange behaviour")
@@ -81,7 +90,7 @@ let kJCTiledScrollViewAnimationTime = TimeInterval(0.1)
         }
     }
     
-    var zoomScale: CGFloat {
+    public var zoomScale: CGFloat {
         set {
             setZoomScale(newValue, animated: false)
         }
@@ -165,7 +174,7 @@ let kJCTiledScrollViewAnimationTime = TimeInterval(0.1)
     // MARK: -
 
     // MARK: Init method and main methods
-    init(frame: CGRect, contentSize: CGSize) {
+    public init(frame: CGRect, contentSize: CGSize) {
         super.init(frame: frame)
 
         autoresizingMask = [.flexibleHeight, .flexibleWidth]
@@ -186,7 +195,7 @@ let kJCTiledScrollViewAnimationTime = TimeInterval(0.1)
         singleTapGestureRecognizer.require(toFail: doubleTapGestureRecognizer)
     }
 
-    required init?(coder aDecoder: NSCoder) {
+    required public init?(coder aDecoder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
 
@@ -242,24 +251,24 @@ let kJCTiledScrollViewAnimationTime = TimeInterval(0.1)
 
     // MARK: - Public Methods
 
-    func setZoomScale(_ zoomScale: CGFloat, animated: Bool) {
+    public func setZoomScale(_ zoomScale: CGFloat, animated: Bool) {
         scrollView.setZoomScale(zoomScale, animated: animated)
     }
     
-    func setContentCenter(_ center: CGPoint, animated: Bool) {
+    public func setContentCenter(_ center: CGPoint, animated: Bool) {
         scrollView.jc_setContentCenter(center, animated: animated)
     }
 
-    func dequeueReusableAnnotationViewWithReuseIdentifier(_ reuseIdentifier: String) -> JCAnnotationView? {
+    public func dequeueReusableAnnotationViewWithReuseIdentifier(_ reuseIdentifier: String) -> JCAnnotationView? {
         guard let view = recycledAnnotationViews.first(where: { $0.reuseIdentifier == reuseIdentifier }) else { return nil }
         return recycledAnnotationViews.remove(view)
     }
 
-    func refreshAnnotations() {
+    public func refreshAnnotations() {
         correctScreenPositionOfAnnotations()
     }
 
-    func addAnnotation(_ annotation: JCAnnotation) {
+    public func addAnnotation(_ annotation: JCAnnotation) {
         annotations.insert(annotation)
         let position = screenPosition(for: annotation)
         guard position.isInside(bounds, insetBy: -25),
@@ -267,21 +276,21 @@ let kJCTiledScrollViewAnimationTime = TimeInterval(0.1)
         add(view, at: position)
     }
 
-    func addAnnotations(_ annotations: [JCAnnotation]) {
+    public func addAnnotations(_ annotations: [JCAnnotation]) {
         annotations.forEach { addAnnotation($0) }
     }
 
-    func removeAnnotation(_ annotation: JCAnnotation) {
+    public func removeAnnotation(_ annotation: JCAnnotation) {
         guard let annotationToRemove = annotations.remove(annotation) else { return }
         guard let annotationViewToRemove = visibleView(for: annotationToRemove) else { return }
         remove(annotationViewToRemove)
     }
 
-    func removeAnnotations(_ annotations: [JCAnnotation]) {
+    public func removeAnnotations(_ annotations: [JCAnnotation]) {
         annotations.forEach { removeAnnotation($0) }
     }
 
-    func removeAllAnnotations() {
+    public func removeAllAnnotations() {
         removeAnnotations(Array(annotations))
     }
 }
@@ -289,15 +298,15 @@ let kJCTiledScrollViewAnimationTime = TimeInterval(0.1)
 // MARK: - UIScrollViewDelegate
 
 extension JCTiledScrollView: UIScrollViewDelegate {
-    func viewForZooming(in scrollView: UIScrollView) -> UIView? {
+    public func viewForZooming(in scrollView: UIScrollView) -> UIView? {
         return tiledView
     }
 
-    func scrollViewDidZoom(_ scrollView: UIScrollView) {
+    public func scrollViewDidZoom(_ scrollView: UIScrollView) {
         tiledScrollViewDelegate?.tiledScrollViewDidZoom?(self)
     }
 
-    func scrollViewDidScroll(_ scrollView: UIScrollView) {
+    public func scrollViewDidScroll(_ scrollView: UIScrollView) {
         correctScreenPositionOfAnnotations()
         tiledScrollViewDelegate?.tiledScrollViewDidScroll?(self)
     }

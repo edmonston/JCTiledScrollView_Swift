@@ -10,9 +10,9 @@
 
 import UIKit
 
-class JCAnnotationView: UIView {
-    var annotation: JCAnnotation?
-    let reuseIdentifier: String
+open class JCAnnotationView: UIView {
+    public var annotation: JCAnnotation?
+    public let reuseIdentifier: String
     
     var position: CGPoint = .zero {
         didSet {
@@ -22,7 +22,7 @@ class JCAnnotationView: UIView {
         }
     }
     
-    var centerOffset: CGPoint = .zero {
+    public var centerOffset: CGPoint = .zero {
         didSet {
             if !centerOffset.equalTo(oldValue) {
                 recenter()
@@ -30,12 +30,12 @@ class JCAnnotationView: UIView {
         }
     }
 
-    init(frame: CGRect, reuseIdentifier: String) {
+    public init(frame: CGRect, reuseIdentifier: String) {
         self.reuseIdentifier = reuseIdentifier
         super.init(frame: frame)
     }
 
-    required init?(coder aDecoder: NSCoder) {
+    required public init?(coder aDecoder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
 
