@@ -131,7 +131,7 @@ let kJCTiledScrollViewAnimationTime = TimeInterval(0.1)
         tiledScrollViewDelegate?.tiledScrollView?(self, annotationViewDidAppear: annotationView)
     }
     
-    func remove(_ annotationView: JCAnnotationView) {
+    fileprivate func remove(_ annotationView: JCAnnotationView) {
         assert(annotationView.annotation != nil, "Visible views must have a non-nil annotation")
 
         tiledScrollViewDelegate?.tiledScrollView?(self, annotationViewWillDisappear: annotationView)
@@ -232,8 +232,7 @@ let kJCTiledScrollViewAnimationTime = TimeInterval(0.1)
         return position
     }
 
-    // MARK: Mute Annotation Updates
-    func makeMuteAnnotationUpdatesTrueForTime(_ time: TimeInterval) {
+    fileprivate func makeMuteAnnotationUpdatesTrueForTime(_ time: TimeInterval) {
         muteAnnotationUpdates = true
         let popTime = DispatchTime.now() + Double(Int64(time * Double(NSEC_PER_SEC))) / Double(NSEC_PER_SEC)
         DispatchQueue.main.asyncAfter(deadline: popTime) { [weak self] in
@@ -241,26 +240,20 @@ let kJCTiledScrollViewAnimationTime = TimeInterval(0.1)
         }
     }
 
-    // MARK: JCTiledScrollView
+    // MARK: - Public Methods
+
     func setZoomScale(_ zoomScale: CGFloat, animated: Bool) {
         scrollView.setZoomScale(zoomScale, animated: animated)
     }
-
+    
     func setContentCenter(_ center: CGPoint, animated: Bool) {
         scrollView.jc_setContentCenter(center, animated: animated)
     }
 
-    // MARK: Annotation Recycling
-
     func dequeueReusableAnnotationViewWithReuseIdentifier(_ reuseIdentifier: String) -> JCAnnotationView? {
-        if let view = recycledAnnotationViews.first(where: { $0.reuseIdentifier == reuseIdentifier }) {
-            recycledAnnotationViews.remove(view)
-            return view
-        }
-        return nil
+        guard let view = recycledAnnotationViews.first(where: { $0.reuseIdentifier == reuseIdentifier }) else { return nil }
+        return recycledAnnotationViews.remove(view)
     }
-
-    // MARK: Annotations
 
     func refreshAnnotations() {
         correctScreenPositionOfAnnotations()
@@ -291,7 +284,6 @@ let kJCTiledScrollViewAnimationTime = TimeInterval(0.1)
     func removeAllAnnotations() {
         removeAnnotations(Array(annotations))
     }
-
 }
 
 // MARK: - UIScrollViewDelegate
