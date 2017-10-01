@@ -17,10 +17,12 @@ let kJCTiledScrollViewAnimationTime = TimeInterval(0.1)
 
     @objc optional func tiledScrollViewDidZoom(_ scrollView: JCTiledScrollView)
     @objc optional func tiledScrollViewDidScroll(_ scrollView: JCTiledScrollView)
-    @objc optional func tiledScrollView(_ scrollView: JCTiledScrollView, annotationWillDisappear annotation: JCAnnotation)
-    @objc optional func tiledScrollView(_ scrollView: JCTiledScrollView, annotationDidDisappear annotation: JCAnnotation)
-    @objc optional func tiledScrollView(_ scrollView: JCTiledScrollView, annotationWillAppear annotation: JCAnnotation)
-    @objc optional func tiledScrollView(_ scrollView: JCTiledScrollView, annotationDidAppear annotation: JCAnnotation)
+    
+    @objc optional func tiledScrollView(_ scrollView: JCTiledScrollView, annotationViewWillDisappear annotation: JCAnnotationView)
+    @objc optional func tiledScrollView(_ scrollView: JCTiledScrollView, annotationViewDidDisappear annotation: JCAnnotationView)
+    @objc optional func tiledScrollView(_ scrollView: JCTiledScrollView, annotationViewWillAppear annotation: JCAnnotationView)
+    @objc optional func tiledScrollView(_ scrollView: JCTiledScrollView, annotationViewDidAppear annotation: JCAnnotationView)
+    
     @objc optional func tiledScrollView(_ scrollView: JCTiledScrollView, shouldSelectAnnotationView view: JCAnnotationView) -> Bool
     @objc optional func tiledScrollView(_ scrollView: JCTiledScrollView, didSelectAnnotationView view: JCAnnotationView)
     @objc optional func tiledScrollView(_ scrollView: JCTiledScrollView, didDeselectAnnotationView view: JCAnnotationView)
@@ -101,23 +103,21 @@ let kJCTiledScrollViewAnimationTime = TimeInterval(0.1)
 
     fileprivate var annotations = Set<JCAnnotation>()
     fileprivate var recycledAnnotationViews = Set<JCAnnotationView>()
- //   fileprivate var visibleAnnotations = Set<JCVisibleAnnotationTuple>()
     fileprivate var visibleAnnotationViews = Set<JCAnnotationView>()
     fileprivate var selectedAnnotationView: JCAnnotationView?
 
-    func visibleView(for annotation: JCAnnotation) -> JCAnnotationView? {
+    fileprivate func visibleView(for annotation: JCAnnotation) -> JCAnnotationView? {
         return visibleAnnotationViews.first { $0.annotation?.identifier == annotation.identifier }
     }
     
-    func move(_ annotationView: JCAnnotationView, to position: CGPoint) {
+    fileprivate func move(_ annotationView: JCAnnotationView, to position: CGPoint) {
         annotationView.position = position
     }
     
-    func add(_ annotationView: JCAnnotationView, at position: CGPoint) {
+    fileprivate func add(_ annotationView: JCAnnotationView, at position: CGPoint) {
         assert(annotationView.annotation != nil, "Visible views must have a non-nil annotation")
-        guard let annotation = annotationView.annotation else { return }
         
-        tiledScrollViewDelegate?.tiledScrollView?(self, annotationWillAppear: annotation)
+        tiledScrollViewDelegate?.tiledScrollView?(self, annotationViewWillAppear: annotationView)
         canvasView.addSubview(annotationView)
         visibleAnnotationViews.insert(annotationView)
         annotationView.position = position
@@ -128,17 +128,17 @@ let kJCTiledScrollViewAnimationTime = TimeInterval(0.1)
         animation.fromValue = 0.0
         animation.toValue = 1.0
         annotationView.layer.add(animation, forKey: "animateOpacity")
-        tiledScrollViewDelegate?.tiledScrollView?(self, annotationDidAppear: annotation)
+        tiledScrollViewDelegate?.tiledScrollView?(self, annotationViewDidAppear: annotationView)
     }
     
     func remove(_ annotationView: JCAnnotationView) {
         assert(annotationView.annotation != nil, "Visible views must have a non-nil annotation")
-        guard let annotation = annotationView.annotation else { return }
-        tiledScrollViewDelegate?.tiledScrollView?(self, annotationWillDisappear: annotation)
+
+        tiledScrollViewDelegate?.tiledScrollView?(self, annotationViewWillDisappear: annotationView)
         visibleAnnotationViews.remove(annotationView)
         recycledAnnotationViews.insert(annotationView)
         annotationView.removeFromSuperview()
-        tiledScrollViewDelegate?.tiledScrollView?(self, annotationDidDisappear: annotation)
+        tiledScrollViewDelegate?.tiledScrollView?(self, annotationViewDidDisappear: annotationView)
     }
     
     
@@ -264,10 +264,6 @@ let kJCTiledScrollViewAnimationTime = TimeInterval(0.1)
 
     func refreshAnnotations() {
         correctScreenPositionOfAnnotations()
-//        annotations.flatMap { visibleAnnotations.visibleAnnotationTuple(for: $0) }.forEach { t in
-//            t.view.setNeedsLayout()
-//            t.view.setNeedsDisplay()
-//        }
     }
 
     func addAnnotation(_ annotation: JCAnnotation) {
