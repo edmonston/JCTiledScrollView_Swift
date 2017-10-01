@@ -84,7 +84,7 @@ class JCTiledView: UIView {
         let fontSize = 16.0 / scale
 
         UIColor.white.set()
-        let attributes = [NSFontAttributeName: UIFont.boldSystemFont(ofSize: fontSize)]
+        let attributes = [NSAttributedStringKey.font: UIFont.boldSystemFont(ofSize: fontSize)]
         let string = NSString.localizedStringWithFormat(" %0.0f", log2f(Float(scale)))
         let point = CGPoint(x: rect.minX, y: rect.minY)
         string.draw(at: point, withAttributes: attributes)

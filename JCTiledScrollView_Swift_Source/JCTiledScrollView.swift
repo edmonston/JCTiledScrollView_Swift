@@ -317,23 +317,26 @@ extension JCTiledScrollView: UIGestureRecognizerDelegate {
 
     @objc fileprivate func singleTapReceived(_ gestureRecognizer: UITapGestureRecognizer) {
         let newlyTappedAnnotationView = visibleAnnotationViews.first { annotationView in
-            annotationView.point(inside: gestureRecognizer.location(in: annotationView), with: nil)
+            let gestureLocation = gestureRecognizer.location(in: annotationView)
+            return annotationView.point(inside: gestureLocation, with: nil)
         }
-        
         let previouslySelectedAnnotationView = selectedAnnotationView
         selectedAnnotationView = newlyTappedAnnotationView
         var selectionBlocked = false
+        
+        if let annotationView = previouslySelectedAnnotationView {
+            tiledScrollViewDelegate?.tiledScrollView?(self, didDeselectAnnotationView: annotationView)
+        }
         
         if let annotationView = newlyTappedAnnotationView {
             if tiledScrollViewDelegate?.tiledScrollView?(self, shouldSelectAnnotationView: annotationView) ?? true {
                 tiledScrollViewDelegate?.tiledScrollView?(self, didSelectAnnotationView: annotationView)
             } else {
+                selectedAnnotationView = nil
                 selectionBlocked = true
             }
         }
-        if let annotationView = previouslySelectedAnnotationView {
-            tiledScrollViewDelegate?.tiledScrollView?(self, didDeselectAnnotationView: annotationView)
-        }
+
         if newlyTappedAnnotationView == nil || selectionBlocked {
             if centerSingleTap {
                 setContentCenter(gestureRecognizer.location(in: tiledView), animated: true)
@@ -364,7 +367,7 @@ extension JCTiledScrollView: UIGestureRecognizerDelegate {
         tiledScrollViewDelegate?.tiledScrollView?(self, didReceiveDoubleTap: gestureRecognizer)
     }
 
-    func twoFingerTapReceived(_ gestureRecognizer: UITapGestureRecognizer) {
+    @objc func twoFingerTapReceived(_ gestureRecognizer: UITapGestureRecognizer) {
         if zoomsOutOnTwoFingerTap {
             let newZoom = scrollView.jc_zoomScaleByZoomingOut(1.0)
             makeMuteAnnotationUpdatesTrueForTime(kJCTiledScrollViewAnimationTime)

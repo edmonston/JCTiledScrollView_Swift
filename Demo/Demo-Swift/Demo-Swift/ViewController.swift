@@ -128,20 +128,20 @@ let ButtonTitleRemoveAnnotation = "Remove this Annotation"
     }
 
     func tiledScrollView(_ scrollView: JCTiledScrollView, didSelectAnnotationView view: JCAnnotationView) {
-        guard let annotationView = view as? DemoAnnotationView else {
-            return
+        guard let annotationView = view as? DemoAnnotationView else { return }
+        let alertController = UIAlertController(title: "Annotation Selected",
+                                                message: "You've selected an annotation. What would you like to do with it?",
+                                                preferredStyle: .alert)
+        let removeAction = UIAlertAction(title: ButtonTitleRemoveAnnotation, style: .destructive) { [weak self] _ in
+            guard let selectedAnnotation = self?.selectedAnnotation else { return }
+            scrollView.removeAnnotation(selectedAnnotation)
         }
-        let alertView = UIAlertView(
-        title: "Annotation Selected",
-        message: "You've selected an annotation. What would you like to do with it?",
-        delegate: self,
-        cancelButtonTitle: ButtonTitleCancel,
-        otherButtonTitles: ButtonTitleRemoveAnnotation)
-        alertView.show()
+        let cancelAction = UIAlertAction(title: ButtonTitleCancel, style: .cancel)
+        [removeAction, cancelAction].forEach { alertController.addAction($0) }
+        present(alertController, animated: true)
 
         selectedAnnotation = view.annotation
         annotationView.isSelected = true
-  //      annotationView.annotation = annotation
     }
 
     func tiledScrollView(_ scrollView: JCTiledScrollView, didDeselectAnnotationView view: JCAnnotationView) {
@@ -150,7 +150,6 @@ let ButtonTitleRemoveAnnotation = "Remove this Annotation"
         }
         selectedAnnotation = nil
         annotationView.isSelected = false
-     //   annotationView.annotation = annotation
     }
 
     func tiledScrollView(_ scrollView: JCTiledScrollView, viewForAnnotation annotation: JCAnnotation) -> JCAnnotationView? {
@@ -166,23 +165,6 @@ let ButtonTitleRemoveAnnotation = "Remove this Annotation"
         let fileName = NSString(format: "%@_%dx_%d_%d.png", SkippingGirlImageName, scale, row, column) as String
         return UIImage(named: fileName)
 
-    }
-
-    // MARK: UIAlertView Delegate
-    func alertView(_ alertView: UIAlertView, clickedButtonAt buttonIndex: Int) {
-        guard let buttonTitle = alertView.buttonTitle(at: buttonIndex) else {
-            return
-        }
-        switch buttonTitle {
-        case ButtonTitleCancel:
-            break
-        case ButtonTitleRemoveAnnotation:
-            if let selectedAnnotation = self.selectedAnnotation {
-                scrollView.removeAnnotation(selectedAnnotation)
-            }
-        default:
-            break
-        }
     }
 }
 
