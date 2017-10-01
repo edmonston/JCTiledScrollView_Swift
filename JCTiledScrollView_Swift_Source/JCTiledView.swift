@@ -20,6 +20,8 @@ let kJCDefaultTileSize: CGFloat = 256.0
 class JCTiledView: UIView {
     weak var delegate: JCTiledViewDelegate?
 
+    var contentsScale: CGFloat = 1.0
+    
     var scaleTransform: CGAffineTransform {
         return CGAffineTransform(scaleX: contentScaleFactor, y: contentScaleFactor)
     }
@@ -55,6 +57,7 @@ class JCTiledView: UIView {
         tiledLayer.tileSize = scaledTileSize
         tiledLayer.levelsOfDetail = 1
         numberOfZoomLevels = 3
+        contentsScale = tiledLayer.contentsScale
         backgroundColor = .green
     }
 
@@ -64,7 +67,7 @@ class JCTiledView: UIView {
 
     override func draw(_ rect: CGRect) {
         guard let ctx = UIGraphicsGetCurrentContext() else { return }
-        let scale = ctx.ctm.a / tiledLayer.contentsScale
+        let scale = ctx.ctm.a / contentsScale
         let col = Int(rect.minX * scale / self.tileSize.width)
         let row = Int(rect.minY * scale / self.tileSize.height)
         let tileImage = delegate?.tiledView(self, imageForRow: row, column: col, scale: Int(scale))
@@ -76,7 +79,7 @@ class JCTiledView: UIView {
 
     // Handy for Debug
     func annotateRect(_ rect: CGRect, inContext ctx: CGContext) {
-        let scale = ctx.ctm.a / tiledLayer.contentsScale
+        let scale = ctx.ctm.a / contentsScale
         let lineWidth = 2.0 / scale
         let fontSize = 16.0 / scale
 
