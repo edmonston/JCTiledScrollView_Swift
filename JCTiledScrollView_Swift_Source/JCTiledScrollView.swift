@@ -71,8 +71,9 @@ let kJCTiledScrollViewAnimationTime = TimeInterval(0.1)
     public var zoomsToTouchLocation = false
     public var zoomsOutOnTwoFingerTap = true
 
-    public var annotatesRect = false {
-        didSet { self.tiledView.shouldAnnotateRect = annotatesRect }
+    public var annotatesRect: Bool {
+        get { return tiledView.shouldAnnotateRect }
+        set { tiledView.shouldAnnotateRect = newValue }
     }
     
     public var levelsOfZoom = 2 {
@@ -91,12 +92,8 @@ let kJCTiledScrollViewAnimationTime = TimeInterval(0.1)
     }
     
     public var zoomScale: CGFloat {
-        set {
-            setZoomScale(newValue, animated: false)
-        }
-        get {
-            return scrollView.zoomScale
-        }
+        set { setZoomScale(newValue, animated: false) }
+        get { return scrollView.zoomScale }
     }
     
     var muteAnnotationUpdates: Bool  = false{

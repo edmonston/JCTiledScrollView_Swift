@@ -16,10 +16,3 @@ extension CGPoint {
     }
 }
 
-extension CGRect {
-    func randomPointInside() -> CGPoint {
-        let randomX = CGFloat(UInt(arc4random_uniform(UInt32(UInt(width)))))
-        let randomY = CGFloat(UInt(arc4random_uniform(UInt32(UInt(height)))))
-        return CGPoint(x: origin.x + randomX, y: origin.y + randomY)
-    }
-}

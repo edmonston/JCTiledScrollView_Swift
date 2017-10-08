@@ -16,17 +16,15 @@ open class JCAnnotationView: UIView {
     
     var position: CGPoint = .zero {
         didSet {
-            if !position.equalTo(oldValue) {
-                recenter()
-            }
+            guard position != oldValue else { return }
+            recenter()
         }
     }
     
     public var centerOffset: CGPoint = .zero {
         didSet {
-            if !centerOffset.equalTo(oldValue) {
-                recenter()
-            }
+            guard centerOffset != oldValue else { return }
+            recenter()
         }
     }
 
