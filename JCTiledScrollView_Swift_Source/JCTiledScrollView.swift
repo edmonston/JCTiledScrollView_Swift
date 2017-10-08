@@ -202,16 +202,17 @@ let kJCTiledScrollViewAnimationTime = TimeInterval(0.1)
 
     // MARK: Position
     
-    fileprivate func correctScreenPositionOfAnnotations() {
+    fileprivate func correctScreenPositionOfAnnotations(limitedTo annotationsToUpdate: Set<JCAnnotation>? = nil) {
         CATransaction.begin()
         CATransaction.setAnimationDuration(0.0)
         if (scrollView.isZoomBouncing || muteAnnotationUpdates) && !scrollView.isZooming {
             visibleAnnotationViews.forEach { view in
-                guard let annotation = view.annotation else { return }
+                guard let annotation = view.annotation,
+                    annotationsToUpdate == nil || annotationsToUpdate?.contains(annotation) == true else { return }
                 view.position = screenPosition(for: annotation)
             }
         } else {
-            for annotation in annotations {
+            for annotation in annotationsToUpdate ?? annotations {
                 let newPosition = screenPosition(for: annotation)
                 let alreadyVisibleView = visibleView(for: annotation)
                 let isVisible = newPosition.isInside(bounds, insetBy: -25)
@@ -261,6 +262,10 @@ let kJCTiledScrollViewAnimationTime = TimeInterval(0.1)
         return recycledAnnotationViews.remove(view)
     }
 
+    public func refreshAnnotation(_ annotation: JCAnnotation) {
+        correctScreenPositionOfAnnotations(limitedTo: Set([annotation]))
+    }
+    
     public func refreshAnnotations() {
         correctScreenPositionOfAnnotations()
     }
