@@ -178,13 +178,12 @@ let kJCTiledScrollViewAnimationTime = TimeInterval(0.1)
 
         scrollView.delegate = self
         tiledView.delegate = self
-        
-        canvasView.setFixedSize(contentSize)
+
         tiledView.setFixedSize(contentSize)
        
         addSubview(scrollView, insets: .zero)
         scrollView.addSubview(tiledView, insets: .zero)
-        addSubview(canvasView)
+        addSubview(canvasView, insets: .zero)
         
         tiledView.addGestureRecognizer(singleTapGestureRecognizer)
         tiledView.addGestureRecognizer(doubleTapGestureRecognizer)

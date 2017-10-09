@@ -35,7 +35,6 @@ class DemoAnnotationView: JCAnnotationView {
     
     override init(frame: CGRect, reuseIdentifier: String) {
         super.init(frame: frame, reuseIdentifier: reuseIdentifier)
-        sizeToFit()
         backgroundColor = .clear
     }
 
@@ -43,7 +42,7 @@ class DemoAnnotationView: JCAnnotationView {
         fatalError("init(coder:) has not been implemented")
     }
 
-    override func sizeThatFits(_ size: CGSize) -> CGSize {
+    override var intrinsicContentSize: CGSize {
         return CGSize(width: 64, height: 64)
     }
 

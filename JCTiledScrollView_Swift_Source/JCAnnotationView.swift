@@ -31,14 +31,39 @@ open class JCAnnotationView: UIView {
     public init(frame: CGRect, reuseIdentifier: String) {
         self.reuseIdentifier = reuseIdentifier
         super.init(frame: frame)
+        self.translatesAutoresizingMaskIntoConstraints = false
     }
 
     required public init?(coder aDecoder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
 
+    private var centerConstraints: (NSLayoutConstraint, NSLayoutConstraint)?
+    
+    override open func willMove(toSuperview newSuperview: UIView?) {
+        guard newSuperview != nil else {
+            centerConstraints = nil
+            return
+        }
+        recenter()
+    }
+    
     private func recenter() {
-        center = CGPoint(x: position.x + centerOffset.x, y: position.y + centerOffset.y)
+        guard let view = superview else { return }
+        let x = position.x + centerOffset.x
+        let y = position.y + centerOffset.y
+        guard let (xConstraint, yConstraint) = centerConstraints else {
+            let xConstraint = NSLayoutConstraint(item: self, attribute: .centerX, relatedBy: .equal,
+                                                 toItem: view, attribute: .left, multiplier: 1.0, constant: x)
+            let yConstraint = NSLayoutConstraint(item: self, attribute: .centerY, relatedBy: .equal,
+                                                 toItem: view, attribute: .top, multiplier: 1.0, constant: y)
+            xConstraint.isActive = true
+            yConstraint.isActive = true
+            centerConstraints = (xConstraint, yConstraint)
+            return
+        }
+        xConstraint.constant = x
+        yConstraint.constant = y
     }
 }
 
