@@ -210,6 +210,7 @@ let kJCTiledScrollViewAnimationTime = TimeInterval(0.1)
                     annotationsToUpdate == nil || annotationsToUpdate?.contains(annotation) == true else { return }
                 view.position = screenPosition(for: annotation)
             }
+            canvasView.layoutIfNeeded()
         } else {
             for annotation in annotationsToUpdate ?? annotations {
                 let newPosition = screenPosition(for: annotation)
