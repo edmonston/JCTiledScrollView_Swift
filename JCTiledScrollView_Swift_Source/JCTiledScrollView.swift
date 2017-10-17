@@ -106,8 +106,9 @@ let kJCTiledScrollViewAnimationTime = TimeInterval(0.1)
             }
         }
     }
-
-    fileprivate (set) var annotations = Set<JCAnnotation>()
+    
+    fileprivate (set) public var annotations = Set<JCAnnotation>()
+    
     fileprivate var recycledAnnotationViews = Set<JCAnnotationView>()
     fileprivate var visibleAnnotationViews = Set<JCAnnotationView>()
     fileprivate var selectedAnnotationView: JCAnnotationView?
