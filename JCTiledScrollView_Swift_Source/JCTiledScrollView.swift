@@ -107,11 +107,12 @@ let kJCTiledScrollViewAnimationTime = TimeInterval(0.1)
         }
     }
 
-    fileprivate var annotations = Set<JCAnnotation>()
+    fileprivate (set) var annotations = Set<JCAnnotation>()
     fileprivate var recycledAnnotationViews = Set<JCAnnotationView>()
     fileprivate var visibleAnnotationViews = Set<JCAnnotationView>()
     fileprivate var selectedAnnotationView: JCAnnotationView?
-
+    fileprivate var prerequestedAnnotationViews = [String: JCAnnotationView]()
+    
     fileprivate func visibleView(for annotation: JCAnnotation) -> JCAnnotationView? {
         return visibleAnnotationViews.first { $0.annotation?.identifier == annotation.identifier }
     }
@@ -221,8 +222,10 @@ let kJCTiledScrollViewAnimationTime = TimeInterval(0.1)
                 case (let annotationView?, false):
                     remove(annotationView)
                 case (nil, true):
-                    if let annotationView = tiledScrollViewDelegate?.tiledScrollView(self, viewForAnnotation: annotation) {
+                    if let annotationView = prerequestedAnnotationViews[annotation.identifier]
+                        ?? tiledScrollViewDelegate?.tiledScrollView(self, viewForAnnotation: annotation) {
                         add(annotationView, at: newPosition)
+                        prerequestedAnnotationViews[annotation.identifier] = nil
                     }
                 case (nil, false): break
                 }
@@ -231,11 +234,13 @@ let kJCTiledScrollViewAnimationTime = TimeInterval(0.1)
         CATransaction.commit()
     }
 
+    private func position(for annotation: JCAnnotation) -> CGPoint {
+        return CGPoint(x: annotation.contentPosition.x * zoomScale,
+                       y: annotation.contentPosition.y * zoomScale)
+    }
+    
     private func screenPosition(for annotation: JCAnnotation) -> CGPoint {
-        var position = CGPoint.zero
-        position.x = (annotation.contentPosition.x * zoomScale) - scrollView.contentOffset.x
-        position.y = (annotation.contentPosition.y * zoomScale) - scrollView.contentOffset.y
-        return position
+        return position(for: annotation) - scrollView.contentOffset
     }
 
     fileprivate func makeMuteAnnotationUpdatesTrueForTime(_ time: TimeInterval) {
@@ -293,6 +298,25 @@ let kJCTiledScrollViewAnimationTime = TimeInterval(0.1)
 
     public func removeAllAnnotations() {
         removeAnnotations(Array(annotations))
+    }
+    
+    public func scrollToAnnotation(_ annotation: JCAnnotation, animated: Bool) {
+        guard annotations.contains(annotation) else { return }
+        let annotationCenter = position(for: annotation)
+        let annotationView: UIView
+        if let existingView = visibleView(for: annotation) {
+            annotationView = existingView
+        } else if let newView = tiledScrollViewDelegate?.tiledScrollView(self, viewForAnnotation: annotation) {
+            annotationView = newView
+            prerequestedAnnotationViews[annotation.identifier] = newView
+        } else {
+            return
+        }
+        let annotationSize = annotationView.systemLayoutSizeFitting(UILayoutFittingCompressedSize)
+        let origin = CGPoint(x: annotationCenter.x - annotationSize.width / 2.0,
+                             y: annotationCenter.y - annotationSize.height / 2.0)
+        let rect = CGRect(origin: origin, size: annotationSize)
+        scrollView.scrollRectToVisible(rect, animated: animated)
     }
 }
 

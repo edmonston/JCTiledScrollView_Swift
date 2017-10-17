@@ -58,7 +58,6 @@ class JCTiledView: UIView {
         tiledLayer.levelsOfDetail = 1
         numberOfZoomLevels = 3
         contentsScale = tiledLayer.contentsScale
-        backgroundColor = .green
     }
 
     required init?(coder aDecoder: NSCoder) {

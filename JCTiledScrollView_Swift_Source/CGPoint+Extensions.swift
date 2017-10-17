@@ -14,5 +14,9 @@ extension CGPoint {
     func isInside(_ rect: CGRect, insetBy margin: CGFloat) -> Bool {
         return rect.insetBy(dx: margin, dy: margin).contains(self)
     }
+    
+    static func -(lhs: CGPoint, rhs: CGPoint) -> CGPoint {
+        return CGPoint(x: lhs.x - rhs.x, y: lhs.y - rhs.y)
+    }
 }
 
