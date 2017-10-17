@@ -204,8 +204,6 @@ let kJCTiledScrollViewAnimationTime = TimeInterval(0.1)
     // MARK: Position
     
     fileprivate func correctScreenPositionOfAnnotations(limitedTo annotationsToUpdate: Set<JCAnnotation>? = nil) {
-        CATransaction.begin()
-        CATransaction.setAnimationDuration(0.0)
         if (scrollView.isZoomBouncing || muteAnnotationUpdates) && !scrollView.isZooming {
             visibleAnnotationViews.forEach { view in
                 guard let annotation = view.annotation,
@@ -232,7 +230,6 @@ let kJCTiledScrollViewAnimationTime = TimeInterval(0.1)
                 }
             }
         }
-        CATransaction.commit()
     }
 
     private func position(for annotation: JCAnnotation) -> CGPoint {
