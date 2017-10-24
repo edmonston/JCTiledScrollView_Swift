@@ -33,7 +33,7 @@ class DemoAnnotationView: JCAnnotationView {
         }
     }
     
-    override init(frame: CGRect, reuseIdentifier: String) {
+    required init(frame: CGRect, reuseIdentifier: String) {
         super.init(frame: frame, reuseIdentifier: reuseIdentifier)
         backgroundColor = .clear
     }
