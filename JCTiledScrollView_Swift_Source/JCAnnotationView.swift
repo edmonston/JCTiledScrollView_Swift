@@ -28,7 +28,7 @@ open class JCAnnotationView: UIView {
         }
     }
 
-    public init(frame: CGRect, reuseIdentifier: String) {
+    required public init(frame: CGRect, reuseIdentifier: String) {
         self.reuseIdentifier = reuseIdentifier
         super.init(frame: frame)
         self.translatesAutoresizingMaskIntoConstraints = false
