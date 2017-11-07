@@ -1,7 +1,6 @@
 //
-//  Copyright (c) 2015-present Yichi Zhang
-//  https://github.com/yichizhang
-//  zhang-yi-chi@hotmail.com
+//  Copyright (c) 2017-present Peter Edmonston
+//  https://github.com/edmonston
 //
 //  This source code is licensed under MIT license found in the LICENSE file
 //  in the root directory of this source tree.
@@ -11,565 +10,402 @@
 
 import UIKit
 
-let kJCTiledScrollViewAnimationTime = NSTimeInterval(0.1)
+let kJCTiledScrollViewAnimationTime = TimeInterval(0.1)
 
-@objc protocol JCTiledScrollViewDelegate: NSObjectProtocol
-{
-    func tiledScrollView(scrollView: JCTiledScrollView!, viewForAnnotation annotation: JCAnnotation!) -> JCAnnotationView!
+@objc public protocol JCTiledScrollViewDelegate: NSObjectProtocol {
+    func tiledScrollView(_ scrollView: JCTiledScrollView, viewForAnnotation annotation: JCAnnotation) -> JCAnnotationView?
 
-    optional func tiledScrollViewDidZoom(scrollView: JCTiledScrollView) -> ()
-
-    optional func tiledScrollViewDidScroll(scrollView: JCTiledScrollView) -> ()
-
-    optional func tiledScrollView(scrollView: JCTiledScrollView, annotationWillDisappear annotation: JCAnnotation) -> ()
-
-    optional func tiledScrollView(scrollView: JCTiledScrollView, annotationDidDisappear annotation: JCAnnotation) -> ()
-
-    optional func tiledScrollView(scrollView: JCTiledScrollView, annotationWillAppear annotation: JCAnnotation) -> ()
-
-    optional func tiledScrollView(scrollView: JCTiledScrollView, annotationDidAppear annotation: JCAnnotation) -> ()
-
-    /**
-     Whether the annotation view be selected. If not implemented, defaults to `true`
-
-     - Parameters:
-     - scrollView: The tiled scroll view
-     - view: The annotation view
-
-     - Returns: Whether the annotation view be selected
-     */
-    optional func tiledScrollView(scrollView: JCTiledScrollView, shouldSelectAnnotationView view: JCAnnotationView) -> Bool
-
-    optional func tiledScrollView(scrollView: JCTiledScrollView, didSelectAnnotationView view: JCAnnotationView) -> ()
-
-    optional func tiledScrollView(scrollView: JCTiledScrollView, didDeselectAnnotationView view: JCAnnotationView) -> ()
-
-    optional func tiledScrollView(scrollView: JCTiledScrollView, didReceiveSingleTap gestureRecognizer: UIGestureRecognizer) -> ()
-
-    optional func tiledScrollView(scrollView: JCTiledScrollView, didReceiveDoubleTap gestureRecognizer: UIGestureRecognizer) -> ()
-
-    optional func tiledScrollView(scrollView: JCTiledScrollView, didReceiveTwoFingerTap gestureRecognizer: UIGestureRecognizer) -> ()
+    @objc optional func tiledScrollViewDidZoom(_ scrollView: JCTiledScrollView)
+    @objc optional func tiledScrollViewDidScroll(_ scrollView: JCTiledScrollView)
+    
+    @objc optional func tiledScrollView(_ scrollView: JCTiledScrollView, annotationViewWillDisappear annotation: JCAnnotationView)
+    @objc optional func tiledScrollView(_ scrollView: JCTiledScrollView, annotationViewDidDisappear annotation: JCAnnotationView)
+    @objc optional func tiledScrollView(_ scrollView: JCTiledScrollView, annotationViewWillAppear annotation: JCAnnotationView)
+    @objc optional func tiledScrollView(_ scrollView: JCTiledScrollView, annotationViewDidAppear annotation: JCAnnotationView)
+    
+    @objc optional func tiledScrollView(_ scrollView: JCTiledScrollView, shouldSelectAnnotationView view: JCAnnotationView) -> Bool
+    @objc optional func tiledScrollView(_ scrollView: JCTiledScrollView, didSelectAnnotationView view: JCAnnotationView)
+    @objc optional func tiledScrollView(_ scrollView: JCTiledScrollView, didDeselectAnnotationView view: JCAnnotationView)
+    @objc optional func tiledScrollView(_ scrollView: JCTiledScrollView, didReceiveSingleTap gestureRecognizer: UIGestureRecognizer)
+    @objc optional func tiledScrollView(_ scrollView: JCTiledScrollView, didReceiveDoubleTap gestureRecognizer: UIGestureRecognizer)
+    @objc optional func tiledScrollView(_ scrollView: JCTiledScrollView, didReceiveTwoFingerTap gestureRecognizer: UIGestureRecognizer)
 }
 
-@objc protocol JCTileSource: NSObjectProtocol
-{
-    func tiledScrollView(scrollView: JCTiledScrollView, imageForRow row: Int, column: Int, scale: Int) -> UIImage!
+@objc public protocol JCTileSource: NSObjectProtocol {
+    func tiledScrollView(_ scrollView: JCTiledScrollView, imageForRow row: Int, column: Int, scale: Int) -> UIImage?
 }
 
-@objc class JCTiledScrollView: UIView
-{
+@objc public class JCTiledScrollView: UIView {
     //Delegates
-    weak var tiledScrollViewDelegate: JCTiledScrollViewDelegate?
-    weak var dataSource: JCTileSource?
+    public weak var tiledScrollViewDelegate: JCTiledScrollViewDelegate?
+    public weak var dataSource: JCTileSource?
 
-    //internals
-    var tiledView: JCTiledView!
-    var scrollView: UIScrollView!
-    var canvasView: UIView!
+    //Views
+    lazy var tiledView: JCTiledView = {
+        return type(of: self).tiledViewClass().init()
+    }()
+    
+    public let scrollView: UIScrollView = {
+        let scrollView = UIScrollView()
+        scrollView.backgroundColor = .white
+        scrollView.bouncesZoom = true
+        scrollView.bounces = true
+        scrollView.minimumZoomScale = 1.0
+        return scrollView
+    }()
+    
+    public var tiledViewSize: CGSize {
+        return tiledView.bounds.size
+    }
+    
+    fileprivate let canvasView: UIView = {
+        let canvasView = UIView()
+        canvasView.isUserInteractionEnabled = false
+        return canvasView
+    }()
 
     //Default gesture behvaiour
-    var centerSingleTap: Bool = true
-    var zoomsInOnDoubleTap: Bool = true
-    var zoomsToTouchLocation: Bool = false
-    var zoomsOutOnTwoFingerTap: Bool = true
 
-    var _levelsOfZoom: UInt!
-    var _levelsOfDetail: UInt!
-    var _muteAnnotationUpdates: Bool = false
+    public var centerSingleTap = true
+    public var zoomsInOnDoubleTap = true
+    public var zoomsToTouchLocation = false
+    public var zoomsOutOnTwoFingerTap = true
 
-    var levelsOfZoom: UInt
-    {
-        set
-        {
-            _levelsOfZoom = newValue
-
-            self.scrollView.maximumZoomScale = pow(2.0, max(0.0, CGFloat(levelsOfZoom)))
-        }
-        get
-        {
-            return _levelsOfZoom
+    public var annotatesRect: Bool {
+        get { return tiledView.shouldAnnotateRect }
+        set { tiledView.shouldAnnotateRect = newValue }
+    }
+    
+    public var levelsOfZoom = 2 {
+        didSet {
+            scrollView.maximumZoomScale = pow(2.0, max(0.0, CGFloat(levelsOfZoom)))
         }
     }
-    var levelsOfDetail: UInt
-    {
-        set
-        {
-            _levelsOfDetail = newValue
-
+    
+    public var levelsOfDetail = 2 {
+        didSet  {
             if levelsOfDetail == 1 {
                 print("Note: Setting levelsOfDetail to 1 causes strange behaviour")
             }
-            self.tiledView.numberOfZoomLevels = size_t(levelsOfDetail)
-        }
-        get
-        {
-            return _levelsOfDetail
+            tiledView.numberOfZoomLevels = levelsOfDetail
         }
     }
-    var zoomScale: CGFloat
-    {
-        set
-        {
-            self.setZoomScale(newValue, animated: false)
-        }
-        get
-        {
-            return scrollView.zoomScale
-        }
+    
+    public var zoomScale: CGFloat {
+        set { setZoomScale(newValue, animated: false) }
+        get { return scrollView.zoomScale }
     }
-    /*private*/
-    var muteAnnotationUpdates: Bool
-    {
-        set
-        {
-
+    
+    var muteAnnotationUpdates: Bool  = false{
+        didSet {
             // FIXME: Jesse C - I don't like overloading this here, but the logic is in one place
-            _muteAnnotationUpdates = newValue
 
-            self.userInteractionEnabled = !self.muteAnnotationUpdates
-            if !self.muteAnnotationUpdates {
-                self.correctScreenPositionOfAnnotations()
+            isUserInteractionEnabled = !muteAnnotationUpdates
+            if !muteAnnotationUpdates {
+                correctScreenPositionOfAnnotations()
             }
         }
-        get
-        {
-            return _muteAnnotationUpdates
-        }
     }
+    
+    fileprivate (set) public var annotations = Set<JCAnnotation>()
+    
+    fileprivate var recycledAnnotationViews = Set<JCAnnotationView>()
+    fileprivate var visibleAnnotationViews = Set<JCAnnotationView>()
+    fileprivate var selectedAnnotationView: JCAnnotationView?
+    fileprivate var prerequestedAnnotationViews = [String: JCAnnotationView]()
+    
+    fileprivate func visibleView(for annotation: JCAnnotation) -> JCAnnotationView? {
+        return visibleAnnotationViews.first { $0.annotation?.identifier == annotation.identifier }
+    }
+    
+    fileprivate func move(_ annotationView: JCAnnotationView, to position: CGPoint) {
+        annotationView.position = position
+    }
+    
+    fileprivate func add(_ annotationView: JCAnnotationView, at position: CGPoint) {
+        assert(annotationView.annotation != nil, "Visible views must have a non-nil annotation")
+        
+        tiledScrollViewDelegate?.tiledScrollView?(self, annotationViewWillAppear: annotationView)
+        canvasView.addSubview(annotationView)
+        visibleAnnotationViews.insert(annotationView)
+        annotationView.position = position
+        CATransaction.setValue(kCFBooleanTrue, forKey: kCATransactionDisableActions)
+        let animation = CABasicAnimation(keyPath: "opacity")
+        animation.duration = 0.3
+        animation.repeatCount = 1
+        animation.fromValue = 0.0
+        animation.toValue = 1.0
+        annotationView.layer.add(animation, forKey: "animateOpacity")
+        tiledScrollViewDelegate?.tiledScrollView?(self, annotationViewDidAppear: annotationView)
+    }
+    
+    fileprivate func remove(_ annotationView: JCAnnotationView) {
+        assert(annotationView.annotation != nil, "Visible views must have a non-nil annotation")
 
-    /*private*/
-    var annotations: Set<JCAnnotation> = Set()
-    /*private*/
-    var recycledAnnotationViews: Set<JCAnnotationView> = Set()
-    /*private*/
-    var visibleAnnotations: Set<JCVisibleAnnotationTuple> = Set()
-    /*private*/
-    var previousSelectedAnnotationTuple: JCVisibleAnnotationTuple?
-    /*private*/
-    var currentSelectedAnnotationTuple: JCVisibleAnnotationTuple?
-
-    /*private*/
-    var singleTapGestureRecognizer: UITapGestureRecognizer!
-    /*private*/
-    var doubleTapGestureRecognizer: UITapGestureRecognizer!
-    /*private*/
-    var twoFingerTapGestureRecognizer: UITapGestureRecognizer!
+        tiledScrollViewDelegate?.tiledScrollView?(self, annotationViewWillDisappear: annotationView)
+        visibleAnnotationViews.remove(annotationView)
+        recycledAnnotationViews.insert(annotationView)
+        annotationView.removeFromSuperview()
+        tiledScrollViewDelegate?.tiledScrollView?(self, annotationViewDidDisappear: annotationView)
+    }
+    
+    
+    private lazy var singleTapGestureRecognizer: UITapGestureRecognizer = {
+        let gestureRecognizer = UITapGestureRecognizer(target: self, action: #selector(JCTiledScrollView.singleTapReceived))
+        gestureRecognizer.numberOfTapsRequired = 1
+        gestureRecognizer.delegate = self
+        return gestureRecognizer
+    }()
+    
+    private lazy var doubleTapGestureRecognizer: UITapGestureRecognizer = {
+        let gestureRecognizer = UITapGestureRecognizer(target: self, action: #selector(JCTiledScrollView.doubleTapReceived))
+        gestureRecognizer.numberOfTapsRequired = 2
+        return gestureRecognizer
+    }()
+    
+    private lazy var twoFingerTapGestureRecognizer: UITapGestureRecognizer = {
+        let gestureRecognizer = UITapGestureRecognizer(target: self, action: #selector(JCTiledScrollView.twoFingerTapReceived))
+        gestureRecognizer.numberOfTouchesRequired = 2
+        gestureRecognizer.numberOfTapsRequired = 1
+        return gestureRecognizer
+    }()
 
     // MARK: -
 
     // MARK: Init method and main methods
-    init(frame: CGRect, contentSize: CGSize)
-    {
+    public init(frame: CGRect, contentSize: CGSize) {
         super.init(frame: frame)
 
-        autoresizingMask = [UIViewAutoresizing.FlexibleHeight, UIViewAutoresizing.FlexibleWidth]
+        autoresizingMask = [.flexibleHeight, .flexibleWidth]
 
-        scrollView = UIScrollView(frame: self.bounds)
-        scrollView.autoresizingMask = [UIViewAutoresizing.FlexibleHeight, UIViewAutoresizing.FlexibleWidth]
         scrollView.delegate = self
-        scrollView.backgroundColor = UIColor.whiteColor()
-        scrollView.contentSize = contentSize
-        scrollView.bouncesZoom = true
-        scrollView.bounces = true
-        scrollView.minimumZoomScale = 1.0
-
-        levelsOfZoom = 2
-
-        let canvasFrame = CGRect(origin: CGPointZero, size: scrollView.contentSize)
-        canvasView = UIView(frame: canvasFrame)
-        canvasView.userInteractionEnabled = false
-
-        let tiledLayerClass = self.dynamicType.tiledLayerClass() as! UIView.Type
-        tiledView = tiledLayerClass.init(frame: canvasFrame) as! JCTiledView
         tiledView.delegate = self
 
-        scrollView.addSubview(tiledView)
-
-        addSubview(scrollView)
-        addSubview(canvasView)
-
-        singleTapGestureRecognizer = JCAnnotationTapGestureRecognizer(
-            target: self,
-            action: #selector(singleTapReceived(_:)))
-        singleTapGestureRecognizer.numberOfTapsRequired = 1
-        singleTapGestureRecognizer.delegate = self
+        tiledView.setFixedSize(contentSize)
+       
+        addSubview(scrollView, insets: .zero)
+        scrollView.addSubview(tiledView, insets: .zero)
+        addSubview(canvasView, insets: .zero)
+        
         tiledView.addGestureRecognizer(singleTapGestureRecognizer)
-
-        doubleTapGestureRecognizer = UITapGestureRecognizer(
-            target: self,
-            action: #selector(doubleTapReceived(_:)))
-        doubleTapGestureRecognizer.numberOfTapsRequired = 2
         tiledView.addGestureRecognizer(doubleTapGestureRecognizer)
-
-        singleTapGestureRecognizer.requireGestureRecognizerToFail(doubleTapGestureRecognizer)
-
-        twoFingerTapGestureRecognizer = UITapGestureRecognizer(
-            target: self,
-            action: #selector(twoFingerTapReceived(_:)))
-        twoFingerTapGestureRecognizer.numberOfTouchesRequired = 2
-        twoFingerTapGestureRecognizer.numberOfTapsRequired = 1
         tiledView.addGestureRecognizer(twoFingerTapGestureRecognizer)
+        singleTapGestureRecognizer.require(toFail: doubleTapGestureRecognizer)
     }
 
-    required init?(coder aDecoder: NSCoder)
-    {
+    required public init?(coder aDecoder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
 
-    class func tiledLayerClass() -> AnyClass
-    {
+    class func tiledViewClass() -> JCTiledView.Type {
         return JCTiledView.self
     }
 
     // MARK: Position
-    /*private*/
-    func correctScreenPositionOfAnnotations()
-    {
-
-        CATransaction.begin()
-        CATransaction.setAnimationDuration(0.0)
-
-        if (scrollView.zoomBouncing || muteAnnotationUpdates) && !scrollView.zooming {
-            for t in visibleAnnotations {
-                t.view.position = screenPositionForAnnotation(t.annotation)
+    
+    fileprivate func correctScreenPositionOfAnnotations(limitedTo annotationsToUpdate: Set<JCAnnotation>? = nil) {
+        if (scrollView.isZoomBouncing || muteAnnotationUpdates) && !scrollView.isZooming {
+            visibleAnnotationViews.forEach { view in
+                guard let annotation = view.annotation,
+                    annotationsToUpdate == nil || annotationsToUpdate?.contains(annotation) == true else { return }
+                view.position = screenPosition(for: annotation)
+            }
+            canvasView.layoutIfNeeded()
+        } else {
+            for annotation in annotationsToUpdate ?? annotations {
+                let newPosition = screenPosition(for: annotation)
+                let alreadyVisibleView = visibleView(for: annotation)
+                let isVisible = newPosition.isInside(bounds, insetBy: -25)
+                switch (alreadyVisibleView, isVisible) {
+                case (let annotationView?, true):
+                    move(annotationView, to: newPosition)
+                case (let annotationView?, false):
+                    remove(annotationView)
+                case (nil, true):
+                    if let annotationView = prerequestedAnnotationViews[annotation.identifier]
+                        ?? tiledScrollViewDelegate?.tiledScrollView(self, viewForAnnotation: annotation) {
+                        add(annotationView, at: newPosition)
+                        prerequestedAnnotationViews[annotation.identifier] = nil
+                    }
+                case (nil, false): break
+                }
             }
         }
-        else {
-            for annotation in annotations {
-                let screenPosition = screenPositionForAnnotation(annotation)
-                var t = visibleAnnotations.visibleAnnotationTupleForAnnotation(annotation)
-
-                if screenPosition.jc_isWithinBounds(bounds) {
-                    if let t = t {
-                        if t == currentSelectedAnnotationTuple {
-                            canvasView.addSubview(t.view)
-                        }
-                        t.view.position = screenPosition
-                    }
-                    else {
-                        // t is nil
-                        let view = tiledScrollViewDelegate?.tiledScrollView(self, viewForAnnotation: annotation)
-
-                        if let view = view {
-                            view.position = screenPosition
-
-                            t = JCVisibleAnnotationTuple(annotation: annotation, view: view)
-
-                            if let t = t {
-                                tiledScrollViewDelegate?.tiledScrollView?(self, annotationWillAppear: t.annotation)
-
-                                visibleAnnotations.insert(t)
-                                canvasView.addSubview(t.view)
-
-                                CATransaction.setValue(kCFBooleanTrue, forKey: kCATransactionDisableActions)
-                                let animation = CABasicAnimation(keyPath: "opacity")
-                                animation.duration = 0.3
-                                animation.repeatCount = 1
-                                animation.fromValue = 0.0
-                                animation.toValue = 1.0
-                                t.view.layer.addAnimation(animation, forKey: "animateOpacity")
-
-                                tiledScrollViewDelegate?.tiledScrollView?(self, annotationDidAppear: t.annotation)
-                            }
-
-                        }
-                        else {
-                            // view is nil
-                            continue
-                        }
-                    }
-                }
-                else {
-                    if let t = t {
-                        tiledScrollViewDelegate?.tiledScrollView?(self, annotationWillAppear: t.annotation)
-
-                        if t != currentSelectedAnnotationTuple {
-                            t.view.removeFromSuperview()
-                            recycledAnnotationViews.insert(t.view)
-                            visibleAnnotations.remove(t)
-                        }
-                        else {
-                            // FIXME: Anthony D - I don't like let the view in visible annotations array, but the logic is in one place
-                            t.view.removeFromSuperview()
-                        }
-
-                        tiledScrollViewDelegate?.tiledScrollView?(self, annotationDidDisappear: t.annotation)
-                    }
-                } // if screenPosition.jc_isWithinBounds(bounds)
-            } // for obj in annotations
-        }// if (scrollView.zoomBouncing || muteAnnotationUpdates) && !scrollView.zooming
-
-        CATransaction.commit()
     }
 
-    /*private*/
-    func screenPositionForAnnotation(annotation: JCAnnotation) -> CGPoint
-    {
-        var position = CGPointZero
-        position.x = (annotation.contentPosition.x * self.zoomScale) - scrollView.contentOffset.x
-        position.y = (annotation.contentPosition.y * self.zoomScale) - scrollView.contentOffset.y
-        return position
+    private func position(for annotation: JCAnnotation) -> CGPoint {
+        return CGPoint(x: annotation.contentPosition.x * zoomScale,
+                       y: annotation.contentPosition.y * zoomScale)
+    }
+    
+    private func screenPosition(for annotation: JCAnnotation) -> CGPoint {
+        return position(for: annotation) - scrollView.contentOffset
     }
 
-    // MARK: Mute Annotation Updates
-    func makeMuteAnnotationUpdatesTrueFor(time: NSTimeInterval)
-    {
-
-        self.muteAnnotationUpdates = true
-
-        let popTime = dispatch_time(
-        DISPATCH_TIME_NOW, Int64(time * Double(NSEC_PER_SEC)))
-        dispatch_after(popTime, dispatch_get_main_queue(), {
-            self.muteAnnotationUpdates = false
-        })
+    fileprivate func makeMuteAnnotationUpdatesTrueForTime(_ time: TimeInterval) {
+        muteAnnotationUpdates = true
+        let popTime = DispatchTime.now() + Double(Int64(time * Double(NSEC_PER_SEC))) / Double(NSEC_PER_SEC)
+        DispatchQueue.main.asyncAfter(deadline: popTime) { [weak self] in
+            self?.muteAnnotationUpdates = false
+        }
     }
 
-    // MARK: JCTiledScrollView
-    func setZoomScale(zoomScale: CGFloat, animated: Bool)
-    {
+    // MARK: - Public Methods
+
+    public func setZoomScale(_ zoomScale: CGFloat, animated: Bool) {
         scrollView.setZoomScale(zoomScale, animated: animated)
     }
-
-    func setContentCenter(center: CGPoint, animated: Bool)
-    {
+    
+    public func setContentCenter(_ center: CGPoint, animated: Bool) {
         scrollView.jc_setContentCenter(center, animated: animated)
     }
 
-    // MARK: Annotation Recycling
-
-    func dequeueReusableAnnotationViewWithReuseIdentifier(reuseIdentifier: String) -> JCAnnotationView?
-    {
-        var viewToReturn: JCAnnotationView? = nil
-
-        for v in self.recycledAnnotationViews {
-            if v.reuseIdentifier == reuseIdentifier {
-                viewToReturn = v
-                break
-            }
-        }
-
-        if viewToReturn != nil {
-            self.recycledAnnotationViews.remove(viewToReturn!)
-
-        }
-
-        return viewToReturn
+    public func dequeueReusableAnnotationViewWithReuseIdentifier(_ reuseIdentifier: String) -> JCAnnotationView? {
+        guard let view = recycledAnnotationViews.first(where: { $0.reuseIdentifier == reuseIdentifier }) else { return nil }
+        return recycledAnnotationViews.remove(view)
     }
 
-    // MARK: Annotations
-
-    func refreshAnnotations()
-    {
-        self.correctScreenPositionOfAnnotations()
-
-        for annotation in self.annotations {
-            let t = self.visibleAnnotations.visibleAnnotationTupleForAnnotation(annotation)
-
-            t?.view.setNeedsLayout()
-            t?.view.setNeedsDisplay()
-        }
+    public func refreshAnnotation(_ annotation: JCAnnotation) {
+        correctScreenPositionOfAnnotations(limitedTo: Set([annotation]))
+    }
+    
+    public func refreshAnnotations() {
+        correctScreenPositionOfAnnotations()
     }
 
-    func addAnnotation(annotation: JCAnnotation)
-    {
-        self.annotations.insert(annotation)
-
-        let screenPosition = self.screenPositionForAnnotation(annotation)
-
-        if screenPosition.jc_isWithinBounds(bounds) {
-
-            let view = self.tiledScrollViewDelegate!.tiledScrollView(self, viewForAnnotation: annotation)
-            view.position = screenPosition
-
-            let t = JCVisibleAnnotationTuple(annotation: annotation, view: view)
-            self.visibleAnnotations.insert(t)
-
-            self.canvasView.addSubview(view)
-        }
+    public func addAnnotation(_ annotation: JCAnnotation) {
+        annotations.insert(annotation)
+        let position = screenPosition(for: annotation)
+        guard position.isInside(bounds, insetBy: -25),
+            let view = tiledScrollViewDelegate?.tiledScrollView(self, viewForAnnotation: annotation) else { return }
+        add(view, at: position)
     }
 
-    func addAnnotations(annotations: NSArray)
-    {
-        for annotation in annotations {
-            self.addAnnotation(annotation as! JCAnnotation)
-        }
+    public func addAnnotations(_ annotations: [JCAnnotation]) {
+        annotations.forEach { addAnnotation($0) }
     }
 
-    func removeAnnotation(annotation: JCAnnotation?)
-    {
-        if let annotation = annotation {
-            if self.annotations.contains(annotation) {
-
-                if let t = self.visibleAnnotations.visibleAnnotationTupleForAnnotation(annotation) {
-
-                    t.view.removeFromSuperview()
-                    self.visibleAnnotations.remove(t)
-                }
-
-                self.annotations.remove(annotation)
-            }
-        }
+    public func removeAnnotation(_ annotation: JCAnnotation) {
+        guard let annotationToRemove = annotations.remove(annotation) else { return }
+        guard let annotationViewToRemove = visibleView(for: annotationToRemove) else { return }
+        remove(annotationViewToRemove)
     }
 
-    func removeAnnotations(annotations: NSArray)
-    {
-        for annotation in annotations {
-            self.removeAnnotation(annotation as? JCAnnotation)
-        }
+    public func removeAnnotations(_ annotations: [JCAnnotation]) {
+        annotations.forEach { removeAnnotation($0) }
     }
 
-    func removeAllAnnotations()
-    {
-        for annotation in self.annotations {
-            self.removeAnnotation(annotation)
-        }
+    public func removeAllAnnotations() {
+        removeAnnotations(Array(annotations))
     }
-
+    
+    public func scrollToAnnotation(_ annotation: JCAnnotation, animated: Bool) {
+        guard annotations.contains(annotation) else { return }
+        let annotationCenter = position(for: annotation)
+        let annotationView: UIView
+        if let existingView = visibleView(for: annotation) {
+            annotationView = existingView
+        } else if let newView = tiledScrollViewDelegate?.tiledScrollView(self, viewForAnnotation: annotation) {
+            annotationView = newView
+            prerequestedAnnotationViews[annotation.identifier] = newView
+        } else {
+            return
+        }
+        let annotationSize = annotationView.systemLayoutSizeFitting(UILayoutFittingCompressedSize)
+        let origin = CGPoint(x: annotationCenter.x - annotationSize.width / 2.0,
+                             y: annotationCenter.y - annotationSize.height / 2.0)
+        let rect = CGRect(origin: origin, size: annotationSize)
+        scrollView.scrollRectToVisible(rect, animated: animated)
+    }
 }
 
 // MARK: - UIScrollViewDelegate
 
-extension JCTiledScrollView: UIScrollViewDelegate
-{
-
-    func viewForZoomingInScrollView(scrollView: UIScrollView) -> UIView?
-    {
-        return self.tiledView
+extension JCTiledScrollView: UIScrollViewDelegate {
+    public func viewForZooming(in scrollView: UIScrollView) -> UIView? {
+        return tiledView
     }
 
-    func scrollViewDidZoom(scrollView: UIScrollView)
-    {
-        self.tiledScrollViewDelegate?.tiledScrollViewDidZoom?(self)
+    public func scrollViewDidZoom(_ scrollView: UIScrollView) {
+        tiledScrollViewDelegate?.tiledScrollViewDidZoom?(self)
     }
 
-    func scrollViewDidScroll(scrollView: UIScrollView)
-    {
-        self.correctScreenPositionOfAnnotations()
-
-        self.tiledScrollViewDelegate?.tiledScrollViewDidScroll?(self)
+    public func scrollViewDidScroll(_ scrollView: UIScrollView) {
+        correctScreenPositionOfAnnotations()
+        tiledScrollViewDelegate?.tiledScrollViewDidScroll?(self)
     }
 }
 
 // MARK: - JCTiledBitmapViewDelegate
 
-extension JCTiledScrollView: JCTiledBitmapViewDelegate
-{
-
-    func tiledView(tiledView: JCTiledView, imageForRow row: Int, column: Int, scale: Int) -> UIImage
-    {
-        return self.dataSource!.tiledScrollView(self, imageForRow: row, column: column, scale: scale)
+extension JCTiledScrollView: JCTiledViewDelegate {
+    func tiledView(_ tiledView: JCTiledView, imageForRow row: Int, column: Int, scale: Int) -> UIImage? {
+        return dataSource?.tiledScrollView(self, imageForRow: row, column: column, scale: scale)
     }
-
 }
 
 // MARK: - UIGestureRecognizerDelegate
 
-extension JCTiledScrollView: UIGestureRecognizerDelegate
-{
+extension JCTiledScrollView: UIGestureRecognizerDelegate {
 
-    func singleTapReceived(gestureRecognizer: UITapGestureRecognizer)
-    {
-        if gestureRecognizer.isKindOfClass(JCAnnotationTapGestureRecognizer.self) {
-
-            let annotationGestureRecognizer = gestureRecognizer as! JCAnnotationTapGestureRecognizer
-
-            previousSelectedAnnotationTuple = currentSelectedAnnotationTuple
-            currentSelectedAnnotationTuple = annotationGestureRecognizer.tapAnnotation
-
-            if nil == annotationGestureRecognizer.tapAnnotation {
-
-                if let previousSelectedAnnotationTuple = self.previousSelectedAnnotationTuple {
-                    self.tiledScrollViewDelegate?.tiledScrollView?(self, didDeselectAnnotationView: previousSelectedAnnotationTuple.view)
-                }
-                else if self.centerSingleTap {
-                    self.setContentCenter(gestureRecognizer.locationInView(self.tiledView), animated: true)
-                }
-
-                self.tiledScrollViewDelegate?.tiledScrollView?(self, didReceiveSingleTap: gestureRecognizer)
-            }
-            else {
-                if let previousSelectedAnnotationTuple = self.previousSelectedAnnotationTuple {
-                    var oldSelectedAnnotationView = previousSelectedAnnotationTuple.view
-
-                    if oldSelectedAnnotationView == nil {
-                        oldSelectedAnnotationView = self.tiledScrollViewDelegate?.tiledScrollView(self, viewForAnnotation: previousSelectedAnnotationTuple.annotation)
-                    }
-                    self.tiledScrollViewDelegate?.tiledScrollView?(self, didDeselectAnnotationView: oldSelectedAnnotationView)
-                }
-                if currentSelectedAnnotationTuple != nil {
-                    if let tapAnnotation = annotationGestureRecognizer.tapAnnotation {
-                        let currentSelectedAnnotationView = tapAnnotation.view
-                        if (tiledScrollViewDelegate?.tiledScrollView?(self, shouldSelectAnnotationView: currentSelectedAnnotationView) ?? true) == true {
-                            self.tiledScrollViewDelegate?.tiledScrollView?(self, didSelectAnnotationView: currentSelectedAnnotationView)
-                        }
-                        else {
-                            self.tiledScrollViewDelegate?.tiledScrollView?(self, didReceiveSingleTap: gestureRecognizer)
-                        }
-                    }
-                }
+    @objc fileprivate func singleTapReceived(_ gestureRecognizer: UITapGestureRecognizer) {
+        let newlyTappedAnnotationView = visibleAnnotationViews.first { annotationView in
+            let gestureLocation = gestureRecognizer.location(in: annotationView)
+            return annotationView.point(inside: gestureLocation, with: nil)
+        }
+        let previouslySelectedAnnotationView = selectedAnnotationView
+        selectedAnnotationView = newlyTappedAnnotationView
+        var selectionBlocked = false
+        
+        if let annotationView = previouslySelectedAnnotationView {
+            tiledScrollViewDelegate?.tiledScrollView?(self, didDeselectAnnotationView: annotationView)
+        }
+        
+        if let annotationView = newlyTappedAnnotationView {
+            if tiledScrollViewDelegate?.tiledScrollView?(self, shouldSelectAnnotationView: annotationView) ?? true {
+                tiledScrollViewDelegate?.tiledScrollView?(self, didSelectAnnotationView: annotationView)
+            } else {
+                selectedAnnotationView = nil
+                selectionBlocked = true
             }
         }
-    }
 
-    func doubleTapReceived(gestureRecognizer: UITapGestureRecognizer)
-    {
-        if self.zoomsInOnDoubleTap {
-            let newZoom = self.scrollView.jc_zoomScaleByZoomingIn(1.0)
-            self.makeMuteAnnotationUpdatesTrueFor(kJCTiledScrollViewAnimationTime)
-
-            if self.zoomsToTouchLocation {
-                let bounds = scrollView.bounds
-                let pointInView = CGPointApplyAffineTransform(
-                gestureRecognizer.locationInView(scrollView),
-                CGAffineTransformMakeScale(1 / scrollView.zoomScale, 1 / scrollView.zoomScale)
-                )
-                let newSize = CGSizeApplyAffineTransform(
-                bounds.size,
-                CGAffineTransformMakeScale(1 / newZoom, 1 / newZoom)
-                )
-
-                scrollView.zoomToRect(CGRectMake(pointInView.x - (newSize.width / 2),
-                                                 pointInView.y - (newSize.height / 2), newSize.width, newSize.height), animated: true)
+        if newlyTappedAnnotationView == nil || selectionBlocked {
+            if centerSingleTap {
+                setContentCenter(gestureRecognizer.location(in: tiledView), animated: true)
             }
-            else {
+            tiledScrollViewDelegate?.tiledScrollView?(self, didReceiveSingleTap: gestureRecognizer)
+        }
+    }
+    
+    @objc fileprivate func doubleTapReceived(_ gestureRecognizer: UITapGestureRecognizer) {
+        if zoomsInOnDoubleTap {
+            let newZoom = scrollView.jc_zoomScaleByZoomingIn(1.0)
+            makeMuteAnnotationUpdatesTrueForTime(kJCTiledScrollViewAnimationTime)
+
+            if zoomsToTouchLocation {
+                let bounds = scrollView.bounds
+                let transform = CGAffineTransform(scaleX: 1 / scrollView.zoomScale, y: 1 / scrollView.zoomScale)
+                let pointInView = gestureRecognizer.location(in: scrollView).applying(transform)
+                let newSize = bounds.size.applying(CGAffineTransform(scaleX: 1 / newZoom, y: 1 / newZoom))
+                let zoomRect = CGRect(x: pointInView.x - (newSize.width / 2),
+                                      y: pointInView.y - (newSize.height / 2),
+                                      width: newSize.width,
+                                      height: newSize.height)
+                scrollView.zoom(to: zoomRect, animated: true)
+            } else {
                 scrollView.setZoomScale(newZoom, animated: true)
             }
         }
-        self.tiledScrollViewDelegate?.tiledScrollView?(self, didReceiveDoubleTap: gestureRecognizer)
+        tiledScrollViewDelegate?.tiledScrollView?(self, didReceiveDoubleTap: gestureRecognizer)
     }
 
-    func twoFingerTapReceived(gestureRecognizer: UITapGestureRecognizer)
-    {
-        if self.zoomsOutOnTwoFingerTap {
-
-            let newZoom = self.scrollView.jc_zoomScaleByZoomingOut(1.0)
-
-            self.makeMuteAnnotationUpdatesTrueFor(kJCTiledScrollViewAnimationTime)
-
+    @objc func twoFingerTapReceived(_ gestureRecognizer: UITapGestureRecognizer) {
+        if zoomsOutOnTwoFingerTap {
+            let newZoom = scrollView.jc_zoomScaleByZoomingOut(1.0)
+            makeMuteAnnotationUpdatesTrueForTime(kJCTiledScrollViewAnimationTime)
             scrollView.setZoomScale(newZoom, animated: true)
         }
-
-        self.tiledScrollViewDelegate?.tiledScrollView?(self, didReceiveTwoFingerTap: gestureRecognizer)
-    }
-
-    /** Catch our own tap gesture if it is on an annotation view to set annotation.
-     *Return NO to only recognize single tap on annotation
-     */
-
-    override func gestureRecognizerShouldBegin(gestureRecognizer: UIGestureRecognizer) -> Bool
-    {
-        let location = gestureRecognizer.locationInView(self.canvasView)
-
-        (gestureRecognizer as? JCAnnotationTapGestureRecognizer)?.tapAnnotation = nil
-
-        for t in self.visibleAnnotations {
-            if CGRectContainsPoint(t.view.frame, location) {
-                (gestureRecognizer as? JCAnnotationTapGestureRecognizer)?.tapAnnotation = t
-                return true
-            }
-        }
-
-        // Deal with all tap gesture
-        return true
+        tiledScrollViewDelegate?.tiledScrollView?(self, didReceiveTwoFingerTap: gestureRecognizer)
     }
 }

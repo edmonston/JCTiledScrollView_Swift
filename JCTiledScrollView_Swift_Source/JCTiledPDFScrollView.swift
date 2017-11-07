@@ -1,7 +1,6 @@
 //
-//  Copyright (c) 2015-present Yichi Zhang
-//  https://github.com/yichizhang
-//  zhang-yi-chi@hotmail.com
+//  Copyright (c) 2017-present Peter Edmonston
+//  https://github.com/edmonston
 //
 //  This source code is licensed under MIT license found in the LICENSE file
 //  in the root directory of this source tree.
@@ -13,15 +12,14 @@ import UIKit
 
 class JCTiledPDFScrollView: JCTiledScrollView, JCPDFTiledViewDelegate
 {
-    private var document: CGPDFDocument!
+    fileprivate var document: CGPDFDocument!
 
-    private var numberOfPages = Int(0)
-    private var cropBoxRect = CGRectZero
-    private var mediaBoxRect = CGRectZero
-    private var effectiveRect = CGRectZero
+    fileprivate var numberOfPages = Int(0)
+    fileprivate var cropBoxRect = CGRect.zero
+    fileprivate var mediaBoxRect = CGRect.zero
+    fileprivate var effectiveRect = CGRect.zero
 
-    override class func tiledLayerClass() -> AnyClass
-    {
+    override class func tiledViewClass() -> JCTiledView.Type {
         return JCPDFTiledView.self
     }
 
@@ -30,21 +28,21 @@ class JCTiledPDFScrollView: JCTiledScrollView, JCPDFTiledViewDelegate
         document = nil
     }
 
-    init(frame: CGRect, URL url: NSURL)
+    init(frame: CGRect, URL url: URL)
     {
-        var contentSize = CGSizeZero
+        var contentSize = CGSize.zero
 
         guard let tempDocument = JCPDFDocument.createX(url, password: "") else {
             fatalError("Document is null")
         }
         document = tempDocument
 
-        guard let firstPage = CGPDFDocumentGetPage(document, 1) else {
+        guard let firstPage = document.page(at: 1) else {
             fatalError("Page is null")
         }
-        numberOfPages = CGPDFDocumentGetNumberOfPages(document)
-        cropBoxRect = CGPDFPageGetBoxRect(firstPage, CGPDFBox.CropBox);
-        mediaBoxRect = CGPDFPageGetBoxRect(firstPage, CGPDFBox.MediaBox);
+        numberOfPages = document.numberOfPages
+        cropBoxRect = firstPage.getBoxRect(CGPDFBox.cropBox);
+        mediaBoxRect = firstPage.getBoxRect(CGPDFBox.mediaBox);
         effectiveRect = mediaBoxRect
 
         contentSize = CGSize(width: effectiveRect.size.width,
@@ -72,7 +70,7 @@ class JCTiledPDFScrollView: JCTiledScrollView, JCPDFTiledViewDelegate
         fatalError("init(coder:) has not been implemented")
     }
 
-    func pdfPageForTiledView(tiledView: JCPDFTiledView!, rect: CGRect, pageNumber: UnsafeMutablePointer<Int>, pageSize: UnsafeMutablePointer<CGSize>) -> CGPDFPage?
+    func pdfPageForTiledView(_ tiledView: JCPDFTiledView!, rect: CGRect, pageNumber: UnsafeMutablePointer<Int>, pageSize: UnsafeMutablePointer<CGSize>) -> CGPDFPage?
     {
         var requestedPage = Int(rect.origin.y / effectiveRect.height) + 1
 
@@ -83,13 +81,13 @@ class JCTiledPDFScrollView: JCTiledScrollView, JCPDFTiledViewDelegate
             requestedPage = numberOfPages
         }
 
-        pageNumber.memory = requestedPage
-        pageSize.memory = effectiveRect.size
+        pageNumber.pointee = requestedPage
+        pageSize.pointee = effectiveRect.size
 
-        return CGPDFDocumentGetPage(document, requestedPage)
+        return document.page(at: requestedPage)
     }
 
-    func pdfDocumentForTiledView(tiledView: JCPDFTiledView!) -> CGPDFDocument
+    func pdfDocumentForTiledView(_ tiledView: JCPDFTiledView!) -> CGPDFDocument
     {
         return document
     }
