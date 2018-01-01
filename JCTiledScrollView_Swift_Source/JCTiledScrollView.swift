@@ -70,6 +70,7 @@ let kJCTiledScrollViewAnimationTime = TimeInterval(0.1)
     public var zoomsInOnDoubleTap = true
     public var zoomsToTouchLocation = false
     public var zoomsOutOnTwoFingerTap = true
+    public var tapRequiresDoubleTapToFail = false
 
     public var annotatesRect: Bool {
         get { return tiledView.shouldAnnotateRect }
@@ -190,7 +191,6 @@ let kJCTiledScrollViewAnimationTime = TimeInterval(0.1)
         tiledView.addGestureRecognizer(singleTapGestureRecognizer)
         tiledView.addGestureRecognizer(doubleTapGestureRecognizer)
         tiledView.addGestureRecognizer(twoFingerTapGestureRecognizer)
-        singleTapGestureRecognizer.require(toFail: doubleTapGestureRecognizer)
     }
 
     required public init?(coder aDecoder: NSCoder) {
@@ -348,6 +348,13 @@ extension JCTiledScrollView: JCTiledViewDelegate {
 
 extension JCTiledScrollView: UIGestureRecognizerDelegate {
 
+    public func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer,
+                           shouldRequireFailureOf otherGestureRecognizer: UIGestureRecognizer) -> Bool {
+        guard let otherGestureRecognizer = otherGestureRecognizer as? UITapGestureRecognizer,
+            otherGestureRecognizer.numberOfTapsRequired == 2 else { return false }
+        return tapRequiresDoubleTapToFail
+    }
+    
     @objc fileprivate func singleTapReceived(_ gestureRecognizer: UITapGestureRecognizer) {
         let newlyTappedAnnotationView = visibleAnnotationViews.first { annotationView in
             let gestureLocation = gestureRecognizer.location(in: annotationView)
@@ -409,3 +416,4 @@ extension JCTiledScrollView: UIGestureRecognizerDelegate {
         tiledScrollViewDelegate?.tiledScrollView?(self, didReceiveTwoFingerTap: gestureRecognizer)
     }
 }
+
